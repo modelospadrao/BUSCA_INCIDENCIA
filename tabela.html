@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUSCADOR — MODO TABELA v2.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="usuarios.js"></script>
+<style>
+:root{--az:#004c97;--azc:#0076d6;--vm:#c62828;--vd:#2e7d32;--am:#f57f17;--bd:#dce3ec;--tx:#263238;--mu:#78909c;--bg:#f0f4f9;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow Condensed',sans-serif;background:var(--bg);color:var(--tx);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+@keyframes pisca{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes pisca-red{0%,100%{color:#d32f2f}50%{color:#ff8a80}}
+
+/* LOGIN */
+#lo{display:none;position:fixed;inset:0;background:rgba(0,40,80,.75);z-index:9999;align-items:center;justify-content:center;}
+#lo.v{display:flex;}
+#lp{background:#fff;border-radius:14px;padding:32px 28px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;}
+#lp h2{font-size:22px;font-weight:900;color:var(--az);margin-bottom:4px;}
+#lp .sub{font-size:11px;color:var(--mu);letter-spacing:.08em;margin-bottom:22px;}
+#lp .fd{text-align:left;margin-bottom:14px;}
+#lp .fd label{display:block;font-size:11px;font-weight:700;color:#555;letter-spacing:.08em;margin-bottom:5px;}
+#lp .fd input{width:100%;padding:12px;font-size:22px;letter-spacing:10px;text-align:center;border:2px solid #ddd;border-radius:8px;font-family:monospace;transition:border-color .2s;}
+#lp .fd input:focus{border-color:var(--az);outline:none;}
+#le{color:#f44336;font-size:12px;margin:6px 0;display:none;font-weight:700;}
+#lb{width:100%;padding:12px;font-size:16px;font-weight:800;color:#fff;background:var(--az);border:none;border-radius:8px;cursor:pointer;margin-top:8px;font-family:'Barlow Condensed',sans-serif;letter-spacing:.1em;}
+#lb:hover:not(:disabled){background:var(--azc);}
+#lb:disabled{background:#ccc;cursor:not-allowed;}
+
+/* HEADER */
+.hdr{background:var(--az);color:#fff;padding:0 16px;height:64px;display:flex;align-items:center;gap:8px;flex-shrink:0;border-bottom:2px solid rgba(255,255,255,.2);}
+.hdr-t{font-size:20px;font-weight:900;letter-spacing:.06em;white-space:nowrap;}
+.hdr-t span{font-size:12px;opacity:.6;font-weight:600;}
+.hdr-b{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;white-space:nowrap;}
+.hdr-r{background:#1a2a3a;border-radius:7px;padding:4px 11px;font-size:15px;font-weight:800;color:#4fc3f7;letter-spacing:.06em;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.hdr-u{font-size:12px;font-weight:700;color:rgba(255,255,255,.8);white-space:nowrap;}
+.sp{flex:1;}
+.bh{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:7px;color:#fff;padding:5px 13px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;}
+.bh:hover{background:rgba(255,255,255,.25);}
+.bh.vd{background:rgba(46,125,50,.45);border-color:rgba(46,125,50,.7);}
+.bh.vd:disabled{opacity:.4;cursor:not-allowed;}
+.sbg{background:#fff;color:var(--az);border-radius:12px;padding:1px 7px;font-size:11px;font-weight:900;}
+
+/* FILTROS */
+
+/* TABELA */
+.tw{flex:1;overflow:auto;position:relative;}
+.tw table{position:relative;}
+tbody tr:first-child td{border-top:none;}
+table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;}
+thead{position:sticky;top:0;z-index:10;}
+/* Redimensionar coluna */
+tbody tr{cursor:pointer;height:38px;user-select:none;}
+tbody tr:nth-child(even){background:#f7f7f7;}
+tbody tr:nth-child(even):hover{background:#eef4ff;}
+tbody tr:nth-child(even).sel{background:#fce4ec!important;}
+tbody tr:nth-child(even).vc{background:#fff0f0;}
+tbody tr:hover{background:#f0f7ff;}
+tbody tr.sel{background:#fce4ec!important;box-shadow:inset 4px 0 0 #f48fb1;}
+tbody tr.vc{background:#fff5f5;}
+tbody tr.vc:hover{background:#ffe8e8;}
+tbody tr.vc.sel{background:#fff9c4!important;}
+td{padding:0 13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;vertical-align:middle;border-right:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0;height:38px;}
+td.n{font-weight:800;color:var(--az);font-size:15px;letter-spacing:.03em;}
+td.n button{background:var(--az);border:none;color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:800;cursor:pointer;padding:3px 10px;letter-spacing:.04em;border-radius:20px;white-space:nowrap;transition:all .15s;box-shadow:0 2px 4px rgba(0,76,151,.3);}
+td.n button:hover{background:var(--azc);box-shadow:0 3px 8px rgba(0,76,151,.4);}
+td.n button:active{transform:scale(.95);box-shadow:0 1px 2px rgba(0,76,151,.2);}
+td.c{text-align:center;}
+td.o input{width:100%;border:1px solid transparent;border-radius:4px;padding:3px 6px;font-family:'Barlow Condensed',sans-serif;font-size:14px;background:transparent;color:var(--tx);outline:none;}
+td.o input:focus{border-color:var(--azc);background:#fff;}
+/* Badge igual largura */
+.bk{display:inline-flex;align-items:center;justify-content:flex-start;padding:0 4px;border-radius:20px;font-size:11px;font-weight:700;height:20px;vertical-align:middle;white-space:nowrap;margin:0 1px;box-sizing:border-box;max-width:100%;overflow:hidden;}
+.bk.ar{background:#fff8e1;color:#f57f17;border:1px solid #ffe082;width:108px;justify-content:flex-start;padding-left:4px;}
+.bk.ci{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;font-size:13px;font-weight:800;width:100%;max-width:100%;justify-content:center;text-align:center;white-space:nowrap;}
+.bk.vi{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9;font-size:13px;font-weight:800;width:100%;max-width:100%;justify-content:center;text-align:center;white-space:nowrap;}
+.bk.av{background:#f3e5f5;color:#6a1b9a;border:1px solid #ce93d8;}
+.bk.av-r{background:#c62828;color:#fff;border:1px solid #b71c1c;}
+.bk.av-a{background:#f57f17;color:#fff;border:1px solid #e65100;}
+.bk.av-n{background:#eceff1;color:#546e7a;border:1px solid #b0bec5;}
+.bg{background:none;border:1px solid var(--bd);border-radius:5px;padding:3px 8px;font-size:14px;cursor:pointer;}
+.bg:hover{background:#e8f5e9;border-color:#4caf50;}
+/* Tooltip obs */
+.obs-tip{position:relative;}
+.obs-tip:hover .obs-bubble{display:block;}
+.obs-bubble{display:none;position:fixed;z-index:900;background:#263238;color:#fff;font-size:13px;padding:10px 14px;border-radius:8px;max-width:320px;white-space:normal;line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,.4);pointer-events:none;}
+
+/* STATUS */
+
+.st b{color:var(--tx);}
+
+
+/* CFG COLUNAS */
+.co{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;}
+.co.ab{display:block;}
+.cp{position:absolute;top:56px;right:16px;background:#fff;border-radius:12px;padding:20px;width:480px;max-height:calc(100vh - 80px);overflow-y:auto;box-shadow:0 16px 50px rgba(0,0,0,.3);}
+.cp h3{font-size:16px;font-weight:800;color:var(--az);margin-bottom:4px;}
+.cp p{font-size:12px;color:var(--mu);margin-bottom:14px;}
+.ci{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;margin-bottom:6px;background:#fff;cursor:grab;}
+.ci:active{cursor:grabbing;}
+.ci.dg{opacity:.35;}
+.ci.dov2{border-color:var(--az);background:#e8f0fb;}
+.ch{color:var(--mu);font-size:16px;flex-shrink:0;}
+.cn{flex:1;font-size:14px;font-weight:700;}
+.ct{width:38px;height:22px;border-radius:11px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.ct.on{background:var(--az);}
+.ct.off{background:#cfd8dc;}
+.ct::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;transition:left .2s;}
+.ct.on::after{left:19px;}
+.ct.off::after{left:3px;}
+.cf{display:flex;gap:6px;margin-top:14px;flex-wrap:nowrap;}
+.cf button{flex:1;padding:9px;border:none;border-radius:7px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+.cok{background:var(--az);color:#fff;}
+.crs{background:#f4f7fb;color:var(--tx);}
+
+/* POPUP ROTA */
+.ro{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center;}
+.ro.ab{display:flex;}
+.rb{background:#fff;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.rb h2{font-size:18px;font-weight:800;color:var(--az);margin-bottom:14px;}
+.rav{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;font-size:13px;color:#f57f17;margin-bottom:14px;}
+.ri{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd);}
+.ri:last-child{border-bottom:none;}
+.rn{background:var(--az);color:#fff;width:26px;height:26px;min-width:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;}
+.rii .a{font-size:15px;font-weight:800;color:var(--az);}
+.rii .b{font-size:12px;color:var(--mu);margin-top:2px;}
+.rii .c{font-size:11px;color:#4caf50;margin-top:1px;}
+.rbt{display:flex;gap:8px;margin-top:16px;}
+.rbt button{flex:1;padding:10px;border:none;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+.rok{background:var(--az);color:#fff;}
+.rfc{background:#f4f7fb;color:var(--tx);}
+
+/* CAPTURA — removido (integrado no preview) */
+.cao{display:none;}
+
+/* PREVIEW CARD — layout duplo lado a lado */
+.pv{display:none;position:fixed;z-index:800;width:780px;background:#fff;border-radius:10px;box-shadow:0 12px 48px rgba(0,76,151,.25);border:1px solid var(--bd);font-family:'Barlow Condensed',sans-serif;pointer-events:auto;overflow:hidden;}
+.pv-hdr{background:var(--az);color:#fff;padding:9px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:move;user-select:none;}
+.pv-hdr-inc{font-size:14px;font-weight:800;letter-spacing:.08em;}
+.pv-hdr-badge{background:rgba(255,255,255,.2);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;}
+.pv-hdr-close{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:3px 10px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.05em;}
+.pv-hdr-close:hover{background:rgba(255,255,255,.3);}
+/* Dois painéis */
+.pv-panels{display:flex;align-items:stretch;gap:0;}
+.pv-left{flex:1;padding:14px;border-right:1px solid var(--bd);overflow-y:auto;max-height:480px;}
+.pv-right{width:310px;display:flex;flex-direction:column;overflow:hidden;}
+.pv-right-hdr{background:#f4f7fb;border-bottom:1px solid var(--bd);padding:8px 14px;font-size:11px;font-weight:800;color:var(--mu);letter-spacing:.08em;display:flex;align-items:center;justify-content:space-between;}
+.pv-msg{flex:1;overflow-y:auto;padding:12px 14px;max-height:440px;}
+/* Linhas da mensagem formatada */
+.msg-line{font-family:'Barlow Condensed',sans-serif;font-size:13px;line-height:1.55;color:var(--tx);}
+.msg-section{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--mu);margin:10px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--bd);}
+.msg-section:first-child{margin-top:0;}
+.msg-key{font-weight:700;color:var(--az);}
+.msg-val{font-weight:500;color:var(--tx);}
+.msg-empty{height:6px;}
+.pv-right-foot{padding:10px 12px;border-top:1px solid var(--bd);background:#f8fafc;flex-shrink:0;}
+.pv-right-foot button{width:100%;padding:8px;border:none;border-radius:7px;background:var(--az);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.04em;}
+.pv-right-foot button:hover{background:var(--azc);}
+.pv-right-foot button.ok{background:#2e7d32;}
+/* grid detalhe */
+.pv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
+.pv-campo{display:flex;flex-direction:column;gap:1px;}
+.pv-campo.full{grid-column:1/-1;}
+.dc-label{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--mu);}
+.dc-value{font-size:13px;font-weight:600;color:var(--tx);word-break:break-word;line-height:1.35;}
+.dc-value.destaque{font-size:18px;font-weight:800;color:var(--az);letter-spacing:.04em;}
+.dc-value.vermelho{color:var(--vm)!important;}
+.dc-value.amarelo-dur{color:var(--am)!important;}
+.dc-value.verde-dur{color:var(--vd)!important;}
+.dur-farol{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:16px;flex-wrap:wrap;}
+.faltam-live{display:inline-flex;align-items:center;gap:4px;background:var(--vm);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:800;letter-spacing:.06em;padding:2px 8px;border-radius:20px;margin-left:4px;white-space:nowrap;}
+.faltam-live.amarelo-bg{background:var(--am);color:#1a1a1a;}
+.faltam-live.verde-bg{background:var(--vd);color:#fff;}
+.faltam-live.vencido{background:#4a0000;color:#ff5252;animation:pisca-red .7s infinite;}
+.farol-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.farol-verde{background:#2e7d32;}
+.farol-amarelo{background:var(--am);animation:pisca .8s infinite;}
+.farol-vermelho{background:var(--vm);animation:pisca .6s infinite;}
+.avisos-alerta{animation:pisca-red .7s infinite;color:var(--vm)!important;font-weight:800;}
+
+.vz{text-align:center;padding:60px 20px;color:var(--mu);}
+.vz .ei{font-size:52px;display:block;margin-bottom:12px;opacity:.3;}
+.vz p{font-size:15px;letter-spacing:.06em;margin-bottom:6px;}
+/* ── FILTROS THEAD v2.0 ── */
+#th th{background:linear-gradient(to bottom,rgba(255,255,255,1) 0%,rgba(229,229,229,1) 100%);color:#1a1a1a;padding:9px 13px;text-align:left;font-size:12px;font-weight:700;letter-spacing:.08em;white-space:nowrap;user-select:none;border-right:1px solid #bbb;border-bottom:1px solid #999;position:sticky;top:0;z-index:6;}
+#th th.s{cursor:pointer;}
+#th th.s:hover{background:rgba(200,200,200,.5);}
+#th th.sa{color:#c62828;}
+#th th.sd{color:#c62828;}
+#th th.sa::after{content:' ▲';font-size:9px;color:#c62828;}
+#th th.sd::after{content:' ▼';font-size:9px;color:#c62828;}
+#th-filters th{background:linear-gradient(to bottom,rgba(229,229,229,1) 0%,rgba(210,210,210,1) 100%);padding:3px 4px;border-right:1px solid #bbb;border-bottom:1px solid #999;position:sticky;top:38px;z-index:10;}
+#th-filters th .fi2-wrap{position:relative;display:block;}
+#th-filters th.sem{background:linear-gradient(to bottom,rgba(215,215,215,1) 0%,rgba(195,195,195,1) 100%);}
+#th-filters th .fi2{width:100%;border:1px solid #999;border-radius:4px;padding:3px 22px 3px 7px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:#1a1a1a;background:rgba(255,255,255,.85);outline:none;box-sizing:border-box;height:24px;text-transform:uppercase;}
+#th-filters th .fi2::placeholder{color:#888;}
+#th-filters th .fi2:focus{background:#fff;border-color:#333;}
+#th-filters th .fx2{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:11px;cursor:pointer;display:none;padding:0;line-height:1;z-index:1;}
+#th-filters th .fx2:hover{color:#c62828;}
+#th-filters th .fx2.v{display:block;}
+
+.hdr-cnt{background:#fff;border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:3px 12px;font-size:15px;font-weight:400;color:#1a1a1a;white-space:nowrap;letter-spacing:.04em;}
+.hdr-cnt.ve{color:#c62828;}
+.hdr-cnt b{font-weight:400;}
+
+
+.bk.tel-ok{background:#e8f5e9;color:#1b5e20;border:1px solid #a5d6a7;cursor:pointer;font-size:13px;font-weight:800;padding:3px 4px;height:20px;width:100%;max-width:100%;display:inline-flex;align-items:center;justify-content:center;text-align:center;white-space:nowrap;}
+.bk.tel-ok:hover{background:#c8e6c9;border-color:#388e3c;}
+.bk.tel-inv{background:#fff8e1;color:#e65100;border:1px solid #ffcc80;cursor:default;font-size:13px;font-weight:800;padding:3px 4px;height:20px;width:100%;max-width:100%;display:inline-flex;align-items:center;justify-content:center;text-align:center;white-space:nowrap;}
+
+/* MENU CONTEXTO */
+#ctxMenu{display:none;position:fixed;z-index:9000;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.2);min-width:160px;overflow:hidden;}
+#ctxMenu div{padding:9px 16px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;cursor:pointer;color:#263238;display:flex;align-items:center;gap:8px;}
+#ctxMenu div:hover{background:#f0f7ff;color:#004c97;}
+
+/* ── DROPDOWN ÁREA TABELA ── */
+.area-drop-wrap{position:relative;width:100%;height:100%;}
+.area-drop-btn{width:100%;height:24px;border:1px solid #999;border-radius:4px;padding:0 4px 0 7px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:#1a1a1a;background:rgba(255,255,255,.85);outline:none;cursor:pointer;text-align:left;white-space:nowrap;overflow:hidden;display:flex;align-items:center;justify-content:flex-start;gap:4px;text-transform:uppercase;}
+.area-drop-btn .adt-arrow{font-size:9px;opacity:.6;flex-shrink:0;}
+.area-drop-panel{display:none;position:fixed;z-index:9999;background:#fff;border:1.5px solid var(--bd);border-radius:10px;box-shadow:0 8px 32px rgba(0,76,151,.18);width:260px;overflow:hidden;}
+.area-drop-panel.aberto{display:block;}
+.area-drop-busca{padding:8px 10px;border-bottom:1px solid var(--bd);}
+.area-drop-busca input{width:100%;border:1.5px solid var(--bd);border-radius:6px;padding:5px 10px;font-family:'Barlow Condensed',sans-serif;font-size:13px;outline:none;}
+.area-drop-busca input:focus{border-color:var(--az);}
+.area-drop-acoes{display:flex;gap:6px;padding:6px 10px;border-bottom:1px solid var(--bd);}
+.area-drop-acoes button{flex:1;padding:5px;border:none;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.adt-todas{background:var(--az);color:#fff;}
+.adt-nenhuma{background:#ffebee;color:#c62828;}
+.adt-limpar{background:#f4f7fb;color:#546e7a;border:1px solid #dce3ec!important;}
+.area-drop-lista{max-height:500px;overflow-y:auto;}
+.area-drop-item{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;cursor:pointer;border-bottom:1px solid #f5f5f5;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;}
+.area-drop-item:hover{background:#f0f7ff;}
+.area-drop-item.sel{background:#e8f0fb;color:var(--az);}
+.area-drop-item input[type=checkbox]{margin-right:8px;accent-color:var(--az);}
+.area-drop-item .adt-nome{flex:1;}
+.area-drop-item .adt-qtd{background:var(--vm);color:#fff;font-size:11px;font-weight:800;padding:1px 7px;border-radius:10px;min-width:28px;text-align:center;}
+
+.area-drop-fechar{padding:8px 10px;border-top:1px solid var(--bd);text-align:center;}
+.area-drop-fechar button{width:100%;padding:6px;border:1.5px solid var(--bd);border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;background:#f4f7fb;color:var(--cinza-texto);}
+.area-drop-fechar button:hover{background:#e8f0fb;color:var(--az);}
+
+.drop-sep{padding:4px 12px 2px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:800;letter-spacing:.1em;display:flex;align-items:center;gap:8px;margin-top:2px;}
+.drop-sep.sel-title{color:#2e7d32;}
+.drop-sep.nosel-title{color:#c62828;margin-top:4px;}
+.drop-sep::after{content:'';flex:1;height:1px;}
+.drop-sep.sel-title::after{background:#a5d6a7;}
+.drop-sep.nosel-title::after{background:#ef9a9a;}
+
+@keyframes pisca-alerta{0%,100%{opacity:1;}50%{opacity:.3;}}
+#alertFiltros{animation:pisca-alerta 1.2s infinite;}
+
+td.bk-cell{padding:0 3px 0 0;overflow:visible;}
+td.bk-cell .bk{max-width:calc(100% - 10px);width:calc(100% - 10px);margin-left:7px;}
+
+.cn-wrap{flex:1;display:flex;align-items:center;gap:4px;min-width:0;}
+.cn-input{flex:1;border:1px solid transparent;border-radius:4px;padding:2px 5px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--tx);background:transparent;outline:none;min-width:0;}
+.cn-input:focus{border-color:var(--az);background:#f4f7fb;}
+.cn-reset{background:none;border:none;cursor:pointer;font-size:11px;color:var(--mu);padding:0;line-height:1;flex-shrink:0;}
+.cn-reset:hover{color:var(--vm);}
+
+
+
+.cn-w{width:56px;border:1px solid var(--bd);border-radius:4px;padding:2px 4px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--az);background:#f4f7fb;outline:none;text-align:center;flex-shrink:0;}
+.cn-w:focus{border-color:var(--az);}
+.cn-wpx{font-size:13px;color:var(--mu);flex-shrink:0;}
+
+.aviso-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9500;align-items:center;justify-content:center;}
+.aviso-overlay.ab{display:flex;}
+.aviso-box{background:#fff;border-radius:12px;padding:24px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center;}
+.aviso-box .aviso-ico{font-size:36px;margin-bottom:12px;}
+.aviso-box p{font-family:'Barlow Condensed',sans-serif;font-size:15px;color:var(--tx);margin-bottom:18px;line-height:1.5;}
+.aviso-box button{padding:9px 24px;border:none;border-radius:8px;background:var(--az);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+.aviso-box button:hover{background:var(--azc);}
+
+
+
+tbody tr.rota-ativa{background:#d0d0d0!important;}
+tbody tr.rota-ativa.sel{background:#d0d0d0!important;}
+tbody tr.rota-ativa td.rot-num{font-weight:900;color:#004c97;font-size:15px;text-align:center;}
+
+td.cell-vazia{color:transparent!important;cursor:not-allowed;user-select:none;}
+td.cell-vazia *{display:none;}
+td.cell-vazia:hover::after{content:'';display:block;}
+
+.bhi{background:#fff;border:none;border-radius:8px;padding:4px 8px;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:#1a1a1a;
+  white-space:nowrap;transition:box-shadow .15s,background .15s;box-shadow:none;height:36px;}
+.bhi:hover{background:#f0f4ff;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.bhi:active{box-shadow:inset 0 2px 4px rgba(0,0,0,.2);background:#e8eef8;}
+.bhi.ativo{background:#e8f0fb;box-shadow:inset 0 2px 4px rgba(0,76,151,.2);}
+.bhi.vd{color:#fff;background:#2e7d32;}
+.bhi.vd:hover{background:#388e3c;}
+.bhi img{width:20px;height:20px;object-fit:contain;}
+.bhi .sbg{background:var(--az);color:#fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:900;}
+.bhi:disabled{opacity:.35;cursor:not-allowed;background:#e0e0e0!important;color:#aaa!important;}
+</style>
+</head>
+<body>
+
+<div id="lo"><div id="lp">
+  <h2>🔐 ACESSO AO SISTEMA</h2><p class="sub">MODO TABELA</p>
+  <div class="fd"><label>👤 USUÁRIO (4 dígitos)</label>
+    <input type="password" id="lu" maxlength="4" placeholder="••••" oninput="this.value=this.value.replace(/\D/g,'');chk();" onkeypress="if(event.key==='Enter')login();"></div>
+  <div class="fd"><label>🔑 SENHA (4 dígitos)</label>
+    <input type="password" id="ls" maxlength="4" placeholder="••••" oninput="this.value=this.value.replace(/\D/g,'');chk();" onkeypress="if(event.key==='Enter')login();"></div>
+  <p id="le">❌ Usuário ou senha incorretos!</p>
+  <button id="lb" onclick="login()" disabled>ENTRAR</button>
+</div></div>
+
+<div class="hdr">
+  <div class="hdr-t">BUSCADOR <span>MODO TABELA</span></div>
+  <div class="hdr-b" id="bT">0 REGISTROS</div>
+  <div class="hdr-r" id="rel" style="display:none;"></div>
+  <div class="hdr-u" id="hu"></div>
+  <div class="hdr-cnt" id="cntExib">Exibindo: <span id="sT">0</span></div>
+  <div class="hdr-cnt ve" id="cntVenc">Vencidas: <span id="sV">0</span></div>
+  <div class="hdr-cnt" id="cntSel">Selecionadas: <span id="sS">0</span></div>
+  <div class="hdr-cnt" id="alertFiltros" style="display:none;background:#fff3e0;color:#e65100;border-color:#ffb74d;"><img src="ic_filtro.png" style="width:14px;height:14px;object-fit:contain;vertical-align:middle;margin-right:4px;"> FILTROS ATIVOS</div>
+  <div class="sp"></div>
+  <button class="bhi" id="bR" onclick="abrirRota()" disabled><img src="ic_roteirizar.png"><span>ROTEIRIZAR</span><span class="sbg" id="sbg">0</span></button>
+  <button class="bhi" id="btnAutoRota" onclick="autoRoteirizar()" disabled><img src="ic_auto_rota.png"><span>AUTO ROTEIRIZAR</span></button>
+  <button class="bhi" id="btnVenc" onclick="filtrarVencidas()" disabled><img src="ic_vencidas.png"><span>VENCIDAS</span></button>
+  <button class="bhi" onclick="limparRota()"><img src="ic_limpar_rota.png"><span>LIMPAR ROTA</span></button>
+  <button class="bhi" id="btnLimpar" onclick="lTodos()" disabled><img src="ic_limpar.png"><span>LIMPAR</span></button>
+  <button class="bhi" onclick="abrirCfg()"><img src="ic_colunas.png"><span>COLUNAS</span></button>
+  <button class="bhi" onclick="irIdx()"><img src="ic_buscador.png"><span>BUSCADOR</span></button>
+</div>
+
+
+<div class="tw" id="twWrap">
+  <div class="vz" id="vz"><span class="ei">📋</span><p>NENHUM DADO CARREGADO</p><p style="font-size:13px;">Carregue dados no Buscador primeiro</p></div>
+  <table id="tab" style="display:none;"><thead><tr id="th"></tr><tr id="th-filters"></tr></thead><tbody id="tb"></tbody></table>
+</div>
+
+
+<div class="co" id="cfgO" onclick="fCfg(event)">
+  <div class="cp" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"><h3 style="margin:0;">⚙️ CONFIGURAR COLUNAS</h3><button onclick="fecharCfgSemAplicar()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--mu);line-height:1;padding:0;" title="Fechar sem aplicar">✕</button></div><p>Ative/desative · Arraste para reordenar</p>
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:nowrap;">
+      <button onclick="marcarTodas()" style="flex:1;padding:6px;border:1.5px solid #a5d6a7;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;background:#e8f5e9;color:#2e7d32;white-space:nowrap;">✓ MARCAR TODAS</button>
+      <button onclick="desmarcarTodas()" style="flex:1;padding:6px;border:1.5px solid #ef9a9a;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;cursor:pointer;background:#ffebee;color:#c62828;white-space:nowrap;">✗ DESMARCAR TODAS</button>
+    </div>
+    <div id="cfgL"></div>
+    <div class="cf" style="flex-wrap:nowrap;">
+      <button class="crs" onclick="rCols()" style="white-space:nowrap;">↺ Padrão</button>
+      <button class="crs" onclick="redefinirTitulos()" style="background:#fff8e1;color:#e65100;white-space:nowrap;">↺ Títulos</button>
+      <button class="crs" onclick="exportCfg()" style="background:#e8f0fb;color:var(--az);white-space:nowrap;">⬇ EXPORTAR</button>
+      <button class="cok" onclick="fCfg()" style="white-space:nowrap;">✓ APLICAR</button>
+    </div>
+  </div>
+</div>
+
+<div class="ro" id="rotO" onclick="fRota(event)">
+  <div class="rb" onclick="event.stopPropagation()">
+    <h2>🗺️ ROTEIRIZAÇÃO</h2>
+    <div id="rAv"></div><div id="rIt"></div>
+    <div class="rbt"><button class="rfc" onclick="fRota()">CANCELAR</button><button class="rok" onclick="confRota()">✓ ABRIR NO GOOGLE MAPS</button></div>
+  </div>
+</div>
+
+
+
+
+<div class="area-drop-panel" id="dropPanel_are"><div class="area-drop-busca"><input type="text" id="dropBusca_are" placeholder="Filtrar área..." oninput="filtrarOpcoesDropTab('are')"></div><div class="area-drop-acoes"><button class="adt-todas" onclick="todasDropTab('are')">✓ TODAS</button><button class="adt-nenhuma" onclick="nenhumaDropTab('are')">✗ NENHUMA</button><button class="adt-limpar" onclick="limparDropTab('are')">🗑 LIMPAR</button></div><div class="area-drop-lista" id="dropLista_are"></div><div class="area-drop-fechar"><button onclick="fecharTodosDrops()">✕ FECHAR</button></div></div>
+<div class="area-drop-panel" id="dropPanel_cir"><div class="area-drop-busca"><input type="text" id="dropBusca_cir" placeholder="Filtrar circuito..." oninput="filtrarOpcoesDropTab('cir')"></div><div class="area-drop-acoes"><button class="adt-todas" onclick="todasDropTab('cir')">✓ TODAS</button><button class="adt-nenhuma" onclick="nenhumaDropTab('cir')">✗ NENHUMA</button><button class="adt-limpar" onclick="limparDropTab('cir')">🗑 LIMPAR</button></div><div class="area-drop-lista" id="dropLista_cir"></div><div class="area-drop-fechar"><button onclick="fecharTodosDrops()">✕ FECHAR</button></div></div>
+<div class="area-drop-panel" id="dropPanel_via"><div class="area-drop-busca"><input type="text" id="dropBusca_via" placeholder="Filtrar viatura..." oninput="filtrarOpcoesDropTab('via')"></div><div class="area-drop-acoes"><button class="adt-todas" onclick="todasDropTab('via')">✓ TODAS</button><button class="adt-nenhuma" onclick="nenhumaDropTab('via')">✗ NENHUMA</button><button class="adt-limpar" onclick="limparDropTab('via')">🗑 LIMPAR</button></div><div class="area-drop-lista" id="dropLista_via"></div><div class="area-drop-fechar"><button onclick="fecharTodosDrops()">✕ FECHAR</button></div></div>
+<div class="area-drop-panel" id="dropPanel_tip"><div class="area-drop-busca"><input type="text" id="dropBusca_tip" placeholder="Filtrar tipo..." oninput="filtrarOpcoesDropTab('tip')"></div><div class="area-drop-acoes"><button class="adt-todas" onclick="todasDropTab('tip')">✓ TODAS</button><button class="adt-nenhuma" onclick="nenhumaDropTab('tip')">✗ NENHUMA</button><button class="adt-limpar" onclick="limparDropTab('tip')">🗑 LIMPAR</button></div><div class="area-drop-lista" id="dropLista_tip"></div><div class="area-drop-fechar"><button onclick="fecharTodosDrops()">✕ FECHAR</button></div></div>
+<div id="ctxMenu"><div id="ctxCopy" onclick="ctxCopiar()">📋 Copiar valor</div></div>
+<div class="pv" id="pvCard">
+  <div class="pv-hdr">
+    <span class="pv-hdr-inc" id="pv-inc">—</span>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="pv-hdr-badge" id="pv-badge" style="display:none;">🚑 VITAL</span>
+      <button class="pv-hdr-close" onclick="fecharPreview()">✕ FECHAR</button>
+    </div>
+  </div>
+  <div class="pv-panels">
+    <div class="pv-left"><div class="pv-grid" id="pv-grid"></div></div>
+    <div class="pv-right">
+      <div class="pv-right-hdr">
+        <span>📋 MENSAGEM WHATSAPP</span>
+      </div>
+      <div class="pv-msg" id="pv-msg"></div>
+      <div class="pv-right-foot">
+        <button id="pvCopBtn" onclick="copPreview()">📋 COPIAR MENSAGEM</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SKD='buscador_dados_v1',SKT='buscador_tsload_v1',SKO='tabela_obs_v1',SKC='tabela_cols_v4',SKW='tabela_widths_v1',SKS='buscador_sessao',SKDR='tabela_drops_v1',SKTL='tabela_titulos_v1',SKOR='tabela_ordem_v1';
+
+const CD=[
+  {id:'are', lb:'ÁREA',              cp:'Area_Despacho',      v:true,  w:122},
+  {id:'rot', lb:'ROTA',              cp:'__rot__',            v:true,  w:55},
+  {id:'inc', lb:'Nº INCIDÊNCIA',     cp:'Num_Incidencia',     v:true,  w:112},
+  {id:'end', lb:'ENDEREÇO',          cp:'Endereco',           v:true,  w:242},
+  {id:'pel', lb:'PONTO ELÉTRICO',    cp:'Ponto_Eletrico',     v:true,  w:113},
+  {id:'nom', lb:'NOME CLIENTE',      cp:'Cliente',            v:true,  w:180},
+  {id:'tel', lb:'TELEFONE 1',        cp:'Telefone_1',         v:true,  w:95},
+  {id:'tel2',lb:'TELEFONE 2',        cp:'Telefone_2',         v:true,  w:94},
+  {id:'cli', lb:'Nº CLIENTE',        cp:'Num_Cliente',        v:true,  w:102},
+  {id:'tip', lb:'TIPO',              cp:'Tipo_Reclamacao',    v:true,  w:249},
+  {id:'dur', lb:'DURAÇÃO',           cp:'Duracao',            v:true,  w:95},
+  {id:'med', lb:'MEDIDOR',           cp:'Medidor',            v:true,  w:93},
+  {id:'cir', lb:'CIRCUITO',          cp:'Circuito',           v:true,  w:81},
+  {id:'via', lb:'VIATURA',           cp:'Viatura',            v:true,  w:90},
+  {id:'est', lb:'ESTADO',            cp:'Estado',             v:false, w:120},
+  {id:'avi', lb:'AVISOS',            cp:'Total_Avisos',       v:true,  w:110},
+  {id:'niv', lb:'NÍVEL TENSÃO',      cp:'Nivel_Tensao',       v:true,  w:103},
+  {id:'ref', lb:'REFERÊNCIA',        cp:'Ponto_de_Referencia',v:false, w:162},
+  {id:'csh', lb:'CONSH',             cp:'Consh',              v:false, w:100},
+  {id:'gps', lb:'GPS',               cp:'__gps__',            v:true,  w:60},
+  {id:'obc', lb:'OBS. CLIENTE',      cp:'Observacao_Cliente', v:true,  w:160},
+  {id:'obs', lb:'OBSERVAÇÃO',        cp:'__obs__',            v:false, w:180},
+];
+
+let dO=[],dF=[],sel=new Set(),lastSelIdx=-1,oCI=-1,oAs=true,urlR='',obsMap={},cols=[],widths={},uNome='',dSrc=-1,cDSrc=-1;
+
+// ── LOGIN ──
+window.addEventListener('DOMContentLoaded',()=>{
+  const ss=sessionStorage.getItem(SKS);
+  if(ss){try{const s=JSON.parse(ss);uNome=s.nome||'';ini();return;}catch(e){}}
+  document.getElementById('lo').classList.add('v');
+  setTimeout(()=>document.getElementById('lu').focus(),100);
+});
+function chk(){const u=document.getElementById('lu').value,s=document.getElementById('ls').value;document.getElementById('lb').disabled=!(u.length===4&&s.length===4);}
+function login(){
+  const u=document.getElementById('lu').value,s=document.getElementById('ls').value,er=document.getElementById('le');
+  const ok=typeof validarLogin==='function'?validarLogin(u,s):null;
+  if(ok){uNome=ok.nome||'';sessionStorage.setItem(SKS,JSON.stringify({nome:uNome}));document.getElementById('lo').classList.remove('v');ini();}
+  else{er.style.display='block';document.getElementById('lu').value='';document.getElementById('ls').value='';document.getElementById('lu').focus();chk();setTimeout(()=>{er.style.display='none';},3000);}
+}
+function irIdx(){window.location.href='index.html';}
+
+
+// ── INIT ──
+function ini(){
+  if(uNome)document.getElementById('hu').textContent='👤 '+uNome.toUpperCase();
+  try{obsMap=JSON.parse(localStorage.getItem(SKO)||'{}');}catch(e){obsMap={};}
+  loadCols();carregarTitulos();loadWidths();loadDados();startRel();
+  // Timer tempo real
+  setInterval(()=>{
+    const ts=parseInt(localStorage.getItem(SKT)||'0');if(!ts)return;
+    const dec=Math.floor((Date.now()-ts)/1000);
+    // Atualizar células da tabela
+    document.querySelectorAll('td[data-sb]').forEach(td=>{
+      const sb=parseInt(td.dataset.sb);if(isNaN(sb))return;
+      const sa=sb+dec;
+      const txt=td.querySelector('.dur-txt');
+      if(txt){const dh=Math.floor(sa/3600),dm=Math.floor((sa%3600)/60),ds=sa%60;txt.textContent=String(dh).padStart(2,'0')+':'+String(dm).padStart(2,'0')+':'+String(ds).padStart(2,'0');}
+      const dot=td.querySelector('.dur-dot');
+      if(dot&&dot.tagName==='IMG'){const h=sa/3600;dot.src=h>24?'red.png':h>12?'orange.png':'green.png';}
+    });
+    // Atualizar card preview — painel esquerdo
+    const pvDurEl=document.querySelector('#pvCard .dur-farol[data-sb]');
+    if(pvDurEl&&document.getElementById('pvCard').style.display!=='none'){
+      const sb=parseInt(pvDurEl.dataset.sb);if(!isNaN(sb)){
+        const sa=sb+dec,h=sa/3600;
+        const dh=Math.floor(sa/3600),dm=Math.floor((sa%3600)/60),ds=sa%60;
+        const durTxt=document.getElementById('pv-dur-txt');
+        if(durTxt)durTxt.textContent=String(dh).padStart(2,'0')+':'+String(dm).padStart(2,'0')+':'+String(ds).padStart(2,'0');
+        // Atualizar badge faltam
+        const faltam=document.getElementById('pv-faltam');
+        if(faltam){
+          const prazo=24*3600,rest=prazo-sa,fatStr=fmtRest(rest);
+          faltam.textContent=h<0?'VENC +'+fmtRest(-rest):fatStr?'⏱ '+fatStr:'⏳';
+          faltam.className='faltam-live '+(h>12?'verde-bg':h>0?'amarelo-bg':'vencido');
+        }
+        // Atualizar painel direito — linha duração
+        const msgDur=document.getElementById('pv-msg-dur');
+        if(msgDur){
+          let dStr=String(dh).padStart(2,'0')+':'+String(dm).padStart(2,'0')+':'+String(ds).padStart(2,'0');
+          const prazo=24*3600,venc=sa>prazo,rest=prazo-sa,fatStr=fmtRest(Math.abs(rest));
+          if(venc&&fatStr)dStr+=' (fora do prazo — '+fatStr+')';
+          else if(!venc&&fatStr)dStr+=' (faltam '+fatStr+' para vencer)';
+          dStr+=farolChar(h);
+          msgDur.textContent=dStr;
+        }
+      }
+    }
+  },1000);
+}
+
+// ── COLUNAS ──
+function loadCols(){
+  try{const s=JSON.parse(localStorage.getItem(SKC)||'null');
+    if(s&&Array.isArray(s)){cols=s.map(sv=>{const d=CD.find(x=>x.id===sv.id);return d?{...d,v:sv.v}:null;}).filter(Boolean);
+      CD.forEach(d=>{if(!cols.find(c=>c.id===d.id))cols.push({...d});});return;}}catch(e){}
+  cols=CD.map(d=>({...d}));
+}
+function saveCols(){try{localStorage.setItem(SKC,JSON.stringify(cols.map(c=>({id:c.id,v:c.v}))));} catch(e){}}
+function rCols(){cols=CD.map(d=>({...d}));widths={};saveCols();saveWidths();try{localStorage.removeItem(SKTL);localStorage.removeItem(SKOR);}catch(e){}oCI=-1;rCfg();rH();rT();}
+
+// ── LARGURAS ──
+function loadWidths(){try{widths=JSON.parse(localStorage.getItem(SKW)||'{}');}catch(e){widths={};}}
+function saveWidths(){try{localStorage.setItem(SKW,JSON.stringify(widths));}catch(e){}}
+
+// ── DADOS ──
+function loadDados(){
+  try{const raw=localStorage.getItem(SKD);if(!raw)return;
+    const p=JSON.parse(raw);dO=Array.isArray(p)?p:(p.Dados||[]);
+    document.getElementById('bT').textContent=dO.length+' REGISTROS';
+    dF=[...dO];document.getElementById('tab').style.display='';document.getElementById('vz').style.display='none';
+    rH();
+    // Restaurar drops salvos e aplicar filtro APÓS dados carregados
+    carregarDrops();
+    // Restaurar ordem salva
+    try{
+      const ordemSalva=JSON.parse(localStorage.getItem(SKOR)||'null');
+      if(ordemSalva){
+        const vis=cols.filter(c=>c.v);
+        const vi=vis.findIndex(c=>c.id===ordemSalva.colId);
+        if(vi>=0){oCI=vi;oAs=ordemSalva.asc;apOrdem();}
+      }
+    }catch(e){}
+    const temDrop=Object.keys(_dropSel).some(id=>_dropSel[id].size>0);
+    if(temDrop)aFilt();else rT();
+  }catch(e){console.error(e);}
+}
+
+// ── RELÓGIO ──
+function startRel(){
+  setInterval(()=>{const ts=parseInt(localStorage.getItem(SKT)||'0');if(!ts)return;
+    const el=document.getElementById('rel');el.style.display='';
+    const sg=Math.floor((Date.now()-ts)/1000);
+    el.innerHTML='<img src="ic_relogio.png" style="width:15px;height:15px;object-fit:contain;vertical-align:middle;margin-right:4px;">'+String(Math.floor(sg/3600)).padStart(2,'0')+':'+String(Math.floor((sg%3600)/60)).padStart(2,'0')+':'+String(sg%60).padStart(2,'0');
+  },1000);
+}
+
+// ── HELPERS ──
+function pSeg(d){if(!d)return null;const p=String(d).split(':').map(Number);if(p.length===3)return p[0]*3600+p[1]*60+p[2];if(p.length===2)return p[0]*3600+p[1]*60;return null;}
+function semClass(h){if(h===null)return'';if(h<0)return'vermelho';if(h>12)return'verde-dur';if(h>0)return'amarelo-dur';return'vermelho';}
+function fltClass(h){if(h===null||h>12)return'verde-bg';if(h>0)return'amarelo-bg';return'vencido';}
+function dotClr(sa){if(sa===null)return'#4caf50';const h=sa/3600;if(h>24)return'#f44336';if(h>20)return'#ff5722';if(h>12)return'#ff9800';return'#4caf50';}
+function dotIcon(sa){if(sa===null)return'green.png';const h=sa/3600;if(h>24)return'red.png';if(h>12)return'orange.png';return'green.png';}
+function vCoord(raw){if(!raw)return null;const p=String(raw).split(',').map(s=>s.trim());if(p.length!==2)return null;const la=parseFloat(p[0]),ln=parseFloat(p[1]);if(isNaN(la)||isNaN(ln)||la===0&&ln===0||Math.abs(la)>90||Math.abs(ln)>180)return null;return la+','+ln;}
+function gCoord(it){return vCoord(it.Coordenada_Dispositivo)||vCoord(it.Coordenada_Cliente)||null;}
+function u(v){return v?String(v).trim().toUpperCase():'—';}
+function uMed(v){if(!v)return'—';const s=String(v).trim().toUpperCase();return s.startsWith('ES:')?s.replace(/^ES:\s*/,''):s;}
+function fmtRest(rest){if(rest===null)return'';const rs=Math.abs(rest),rh=Math.floor(rs/3600),rm=Math.floor((rs%3600)/60);return(rh>0?rh+'h '+String(rm).padStart(2,'0')+'m':rm+'m');}
+function farolChar(h){if(h===null)return'';if(h>24)return' 🔴';if(h>20)return' ⚠️';if(h>12)return' 🟡';return' 🟢';}
+
+
+function normalizarTel(raw){
+  if(!raw)return null;
+  const v=String(raw).replace(/\D/g,'');
+  if(!v||v==='0')return null;
+  let n=v;
+  // Remover código do país 55 se tiver 12 ou 13 dígitos
+  if((n.length===12||n.length===13)&&n.startsWith('55')) n=n.slice(2);
+  // Ajustar por quantidade de dígitos
+  if(n.length<8)return{num:n,valido:false};
+  if(n.length===8)      n='859'+n;                       // sem DDD sem 9
+  else if(n.length===9) n='85'+n;                        // sem DDD
+  else if(n.length===10)n=n.slice(0,2)+'9'+n.slice(2);  // tem DDD, falta 9
+  else if(n.length===11){}                               // completo
+  else return{num:n,valido:false};                       // >11 inválido
+  // Fixo = 3º dígito entre 1-6
+  const fixo=['1','2','3','4','5','6'].includes(n[2]);
+  return{num:n,valido:!fixo,fixo,fmt:n.slice(0,2)+' '+n.slice(2,7)+'-'+n.slice(7)};
+}
+
+
+// ── MENU CONTEXTO ──
+let _ctxVal = '';
+function ctxCopiar(){
+  if(_ctxVal) navigator.clipboard.writeText(_ctxVal).catch(()=>{});
+  fecharCtx();
+}
+function fecharCtx(){
+  document.getElementById('ctxMenu').style.display='none';
+  _ctxVal='';
+}
+document.addEventListener('click', ()=>fecharCtx());
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') fecharCtx(); });
+
+
+// ── DROPDOWNS DE SELEÇÃO MÚLTIPLA ──
+const DROP_MAP={
+  are:{cp:'Area_Despacho',  lb:'🗂 ÁREA'},
+  cir:{cp:'Circuito',       lb:'⚡ CIRCUITO'},
+  via:{cp:'Viatura',        lb:'🚗 VIATURA'},
+  tip:{cp:'Tipo_Reclamacao',lb:'📋 TIPO'},
+};
+// Sets de seleção por coluna
+const _dropSel={are:new Set(),cir:new Set(),via:new Set(),tip:new Set()};
+let _dropAberto=null;
+
+function abrirDropTab(colId, btn){
+  // Fechar outros abertos
+  if(_dropAberto && _dropAberto!==colId){
+    document.getElementById('dropPanel_'+_dropAberto).classList.remove('aberto');
+  }
+  const panel=document.getElementById('dropPanel_'+colId);
+  const aberto=panel.classList.contains('aberto');
+  if(aberto){panel.classList.remove('aberto');_dropAberto=null;return;}
+  // Popular
+  popularDropTab(colId);
+  // Posicionar
+  const rect=btn.getBoundingClientRect();
+  const pw=260;
+  let left=rect.left;
+  if(left+pw>window.innerWidth)left=window.innerWidth-pw-8;
+  panel.style.left=left+'px';
+  panel.style.top=(rect.bottom+2)+'px';
+  panel.classList.add('aberto');
+  _dropAberto=colId;
+  const busca=document.getElementById('dropBusca_'+colId);
+  if(busca){busca.value='';busca.focus();}
+}
+
+function fecharTodosDrops(){
+  Object.keys(DROP_MAP).forEach(id=>{
+    const p=document.getElementById('dropPanel_'+id);
+    if(p)p.classList.remove('aberto');
+  });
+  _dropAberto=null;
+}
+
+document.addEventListener('click',e=>{
+  if(_dropAberto){
+    const panel=document.getElementById('dropPanel_'+_dropAberto);
+    const btn=document.getElementById('dropBtn_'+_dropAberto);
+    if(panel&&!panel.contains(e.target)&&e.target!==btn&&!btn?.contains(e.target)){
+      panel.classList.remove('aberto');
+      _dropAberto=null;
+    }
+  }
+});
+
+function popularDropTab(colId){
+  const cp=DROP_MAP[colId].cp;
+  const contagem={};
+  // Usar dF (dados já filtrados) para mostrar só opções relevantes
+  // Para o próprio colId, ignorar o filtro dele mesmo para mostrar todas as opções disponíveis
+  const base=dO.filter(it=>{
+    if(_dropSel.are.size>0&&colId!=='are'){const v=(it.Area_Despacho||'').trim().toUpperCase();if(!_dropSel.are.has(v))return false;}
+    if(_dropSel.cir.size>0&&colId!=='cir'){const v=(it.Circuito||'').trim().toUpperCase();if(!_dropSel.cir.has(v))return false;}
+    if(_dropSel.via.size>0&&colId!=='via'){const v=(it.Viatura||'').trim().toUpperCase();if(!_dropSel.via.has(v))return false;}
+    if(_dropSel.tip.size>0&&colId!=='tip'){const v=(it.Tipo_Reclamacao||'').trim().toUpperCase();if(!_dropSel.tip.has(v))return false;}
+    return true;
+  });
+  base.forEach(it=>{const v=(it[cp]||'').trim().toUpperCase();if(v)contagem[v]=(contagem[v]||0)+1;});
+  const itens=Object.keys(contagem).sort();
+  renderDropOpcoesTab(colId,itens,contagem);
+}
+
+function criarDropItem(colId,item,contagem){
+  const div=document.createElement('div');
+  div.className='area-drop-item'+(_dropSel[colId].has(item)?' sel':'');
+  const cb=document.createElement('input');
+  cb.type='checkbox';cb.checked=_dropSel[colId].has(item);
+  cb.onchange=e=>{e.stopPropagation();toggleDropTab(colId,item,cb.checked,div);};
+  const nome=document.createElement('span');
+  nome.className='adt-nome';nome.textContent=item;
+  const qtd=document.createElement('span');
+  qtd.className='adt-qtd';qtd.textContent=contagem[item]||0;
+  div.appendChild(cb);div.appendChild(nome);div.appendChild(qtd);
+  div.onclick=e=>{if(e.target===cb)return;cb.checked=!cb.checked;toggleDropTab(colId,item,cb.checked,div);};
+  return div;
+}
+
+function renderDropOpcoesTab(colId,itens,contagem){
+  const lista=document.getElementById('dropLista_'+colId);
+  lista.innerHTML='';
+  if(!itens.length){lista.innerHTML='<div style="padding:12px;color:#aaa;font-size:13px;">Nenhum item encontrado</div>';return;}
+
+  const selecionados=itens.filter(i=>_dropSel[colId].has(i));
+  const naoSelecionados=itens.filter(i=>!_dropSel[colId].has(i));
+
+  // Bloco FILTRADOS (selecionados)
+  if(selecionados.length){
+    const sepSel=document.createElement('div');
+    sepSel.className='drop-sep sel-title';
+    sepSel.textContent='FILTRADOS';
+    lista.appendChild(sepSel);
+    selecionados.forEach(item=>lista.appendChild(criarDropItem(colId,item,contagem)));
+  }
+
+  // Bloco NÃO FILTRADOS
+  if(naoSelecionados.length){
+    const sepNo=document.createElement('div');
+    sepNo.className='drop-sep nosel-title';
+    sepNo.textContent='NÃO FILTRADOS';
+    lista.appendChild(sepNo);
+    naoSelecionados.forEach(item=>lista.appendChild(criarDropItem(colId,item,contagem)));
+  }
+}
+
+function filtrarOpcoesDropTab(colId){
+  const busca=document.getElementById('dropBusca_'+colId).value.toUpperCase().trim();
+  const cp=DROP_MAP[colId].cp;
+  const contagem={};
+  const base=dO.filter(it=>{
+    if(_dropSel.are.size>0&&colId!=='are'){const v=(it.Area_Despacho||'').trim().toUpperCase();if(!_dropSel.are.has(v))return false;}
+    if(_dropSel.cir.size>0&&colId!=='cir'){const v=(it.Circuito||'').trim().toUpperCase();if(!_dropSel.cir.has(v))return false;}
+    if(_dropSel.via.size>0&&colId!=='via'){const v=(it.Viatura||'').trim().toUpperCase();if(!_dropSel.via.has(v))return false;}
+    if(_dropSel.tip.size>0&&colId!=='tip'){const v=(it.Tipo_Reclamacao||'').trim().toUpperCase();if(!_dropSel.tip.has(v))return false;}
+    return true;
+  });
+  base.forEach(it=>{const v=(it[cp]||'').trim().toUpperCase();if(v)contagem[v]=(contagem[v]||0)+1;});
+  const itens=Object.keys(contagem).filter(v=>!busca||v.includes(busca)).sort();
+  renderDropOpcoesTab(colId,itens,contagem);
+}
+
+function toggleDropTab(colId,item,checked,div){
+  if(checked){_dropSel[colId].add(item);div.classList.add('sel');}
+  else{_dropSel[colId].delete(item);div.classList.remove('sel');}
+  atualizarBtnDropTab(colId);
+  salvarDrops();
+  aFilt();
+}
+
+function todasDropTab(colId){
+  // Selecionar apenas os itens visíveis (filtrados pelo texto de busca)
+  const busca=(document.getElementById('dropBusca_'+colId)?.value||'').toUpperCase().trim();
+  const cp=DROP_MAP[colId].cp;
+  const contagem={};
+  const base=dO.filter(it=>{
+    if(_dropSel.are.size>0&&colId!=='are'){const v=(it.Area_Despacho||'').trim().toUpperCase();if(!_dropSel.are.has(v))return false;}
+    if(_dropSel.cir.size>0&&colId!=='cir'){const v=(it.Circuito||'').trim().toUpperCase();if(!_dropSel.cir.has(v))return false;}
+    if(_dropSel.via.size>0&&colId!=='via'){const v=(it.Viatura||'').trim().toUpperCase();if(!_dropSel.via.has(v))return false;}
+    if(_dropSel.tip.size>0&&colId!=='tip'){const v=(it.Tipo_Reclamacao||'').trim().toUpperCase();if(!_dropSel.tip.has(v))return false;}
+    return true;
+  });
+  base.forEach(it=>{const v=(it[cp]||'').trim().toUpperCase();if(v)contagem[v]=(contagem[v]||0)+1;});
+  const visiveis=Object.keys(contagem).filter(v=>!busca||v.includes(busca));
+  visiveis.forEach(v=>_dropSel[colId].add(v));
+  // Manter lista como está — não resetar
+  renderDropOpcoesTab(colId,visiveis,contagem);
+  atualizarBtnDropTab(colId);
+  salvarDrops();
+  aFilt();
+}
+
+function nenhumaDropTab(colId){
+  _dropSel[colId].clear();
+  const buscaEl=document.getElementById('dropBusca_'+colId);
+  if(buscaEl)buscaEl.value='';
+  popularDropTab(colId);atualizarBtnDropTab(colId);salvarDrops();aFilt();
+}
+
+function limparDropTab(colId){
+  _dropSel[colId].clear();
+  const buscaEl=document.getElementById('dropBusca_'+colId);
+  if(buscaEl)buscaEl.value='';
+  popularDropTab(colId);atualizarBtnDropTab(colId);salvarDrops();aFilt();
+}
+
+function salvarDrops(){
+  try{
+    const data={};
+    Object.keys(_dropSel).forEach(id=>{data[id]=[..._dropSel[id]];});
+    localStorage.setItem(SKDR,JSON.stringify(data));
+  }catch(e){}
+}
+
+function carregarDrops(){
+  try{
+    const data=JSON.parse(localStorage.getItem(SKDR)||'{}');
+    Object.keys(_dropSel).forEach(id=>{
+      if(data[id]&&Array.isArray(data[id])){
+        _dropSel[id]=new Set(data[id]);
+        atualizarBtnDropTab(id);
+      }
+    });
+  }catch(e){}
+}
+
+function atualizarBtnDropTab(colId){
+  const txt=document.getElementById('dropBtnTxt_'+colId);
+  if(!txt)return;
+  const n=_dropSel[colId].size;
+  const lb=DROP_MAP[colId].lb;
+  if(n===0)txt.textContent=lb;
+  else if(n===1)txt.textContent=lb.split(' ')[0]+' '+[..._dropSel[colId]][0];
+  else txt.textContent=lb.split(' ')[0]+' '+n+' ITENS';
+}
+
+// Compatibilidade com funções antigas de área (lTodos usa)
+function abrirAreaDropTab(btn){abrirDropTab('are',btn);}
+function atualizarBtnAreaTab(){atualizarBtnDropTab('are');}
+
+
+
+
+// ── TÍTULOS EDITÁVEIS ──
+function salvarTitulos(){
+  try{
+    const data={};
+    cols.forEach(c=>{if(c.lb!==c._lbOrig)data[c.id]=c.lb;});
+    localStorage.setItem(SKTL,JSON.stringify(data));
+  }catch(e){}
+}
+
+function carregarTitulos(){
+  try{
+    const data=JSON.parse(localStorage.getItem(SKTL)||'{}');
+    cols.forEach(c=>{
+      if(!c._lbOrig)c._lbOrig=c.lb; // guardar original
+      if(data[c.id])c.lb=data[c.id];
+    });
+  }catch(e){}
+}
+
+function redefinirTitulos(){
+  cols.forEach(c=>{if(c._lbOrig)c.lb=c._lbOrig;});
+  try{localStorage.removeItem(SKTL);}catch(e){}
+  rCfg();rH();
+}
+
+
+// ── AUTO ROTEIRIZAÇÃO ──
+const MAX_ANALISAR = 50;
+const MAX_ROTEIRIZAR = 10;
+let _autoRotaPontos = [];
+let _rotaMap = {}; // {Num_Incidencia: numero_parada}
+let _autoRotaUrl = '';
+
+function haversine(lat1, lon1, lat2, lon2){
+  const R = 6371; // km
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+            Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function autoRoteirizar(){
+  // Verificar se tem exatamente 1 item selecionado como ponto de partida
+  if(sel.size !== 1){
+    showAviso('Selecione exatamente 1 item na tabela como ponto de partida antes de usar o Auto Roteirizar.','🧭');
+    return;
+  }
+  // Resetar popup
+  document.getElementById('autoRotInfo').style.display='none';
+  document.getElementById('autoRotItens').innerHTML='';
+  document.getElementById('btnConfAutoRota').textContent='✓ CALCULAR ROTA';
+  document.getElementById('btnConfAutoRota').onclick=calcularAutoRota;
+  _autoRotaPontos=[];
+  _autoRotaUrl='';
+  document.getElementById('autoRotO').classList.add('ab');
+}
+
+function calcularAutoRota(){
+  const qtd = Math.min(10, Math.max(3, parseInt(document.getElementById('autoRotQtd').value)||3));
+  document.getElementById('autoRotQtd').value = qtd;
+
+  // Ponto de partida = item selecionado
+  const selIdx = [...sel][0];
+  const itemPartida = dF[selIdx];
+  const coordPartida = gCoord(itemPartida);
+  if(!coordPartida){
+    showAviso('O item selecionado não possui coordenadas GPS válidas. Escolha um item com GPS.','📍');
+    return;
+  }
+  const pPartida = coordPartida.split(',');
+  const origem = {
+    inc: itemPartida.Num_Incidencia,
+    end: itemPartida.Endereco||'—',
+    coord: coordPartida,
+    lat: parseFloat(pPartida[0]),
+    lng: parseFloat(pPartida[1])
+  };
+
+  // Candidatos — 50 primeiros filtrados com GPS, exceto o selecionado
+  const candidatos = dF.slice(0, MAX_ANALISAR).map(item=>{
+    if(String(item.Num_Incidencia)===String(itemPartida.Num_Incidencia))return null;
+    const c=gCoord(item);if(!c)return null;
+    const p=c.split(',');
+    return{inc:item.Num_Incidencia,end:item.Endereco||'—',coord:c,lat:parseFloat(p[0]),lng:parseFloat(p[1])};
+  }).filter(Boolean);
+
+  if(candidatos.length < 1){
+    showAviso('Não há outros itens com GPS válido nos dados filtrados.','🗺️');
+    return;
+  }
+
+  // Algoritmo vizinho mais próximo partindo da origem selecionada
+  const visitados = new Set();
+  const rota = [origem];
+
+  while(rota.length < qtd && visitados.size < candidatos.length){
+    const ultimo = rota[rota.length-1];
+    let menorDist = Infinity, proxIdx = -1;
+    candidatos.forEach((c,i)=>{
+      if(visitados.has(i))return;
+      const d=haversine(ultimo.lat,ultimo.lng,c.lat,c.lng);
+      if(d<menorDist){menorDist=d;proxIdx=i;}
+    });
+    if(proxIdx===-1)break;
+    rota.push(candidatos[proxIdx]);
+    visitados.add(proxIdx);
+  }
+
+  _autoRotaPontos = rota;
+
+  // Montar URL
+  const ori=rota[0].coord, dst=rota[rota.length-1].coord;
+  const wps=rota.slice(1,-1).map(p=>p.coord);
+  _autoRotaUrl='https://www.google.com/maps/dir/?api=1&origin='+ori+'&destination='+dst;
+  if(wps.length)_autoRotaUrl+='&waypoints='+wps.join('|');
+
+  // Mostrar resultado
+  const infoEl=document.getElementById('autoRotInfo');
+  infoEl.style.display='';
+  infoEl.innerHTML=
+    '<div style="margin-bottom:4px;">📊 Analisados: <b>'+candidatos.length+'</b> itens com GPS (máx. '+MAX_ANALISAR+')</div>'+
+    '<div>🗺️ Rota montada com <b>'+rota.length+'</b> paradas partindo de <b>'+origem.inc+'</b></div>';
+
+  const est=calcularEstimativa(rota);
+  document.getElementById('autoRotItens').innerHTML=rota.map((p,i)=>
+    '<div class="ri"><div class="rn">'+(i+1)+'</div><div class="rii"><div class="a">'+p.inc+(i===0?' 📍 PARTIDA':'')+'</div><div class="b">'+p.end+'</div><div class="c">'+p.coord+'</div></div></div>'
+  ).join('')+blocoEstimativa(est);
+
+  document.getElementById('btnConfAutoRota').textContent='✓ ABRIR NO GOOGLE MAPS';
+  document.getElementById('btnConfAutoRota').onclick=confAutoRota;
+  // Popular coluna ROTA na tabela
+  destacarAutoRota();
+}
+
+function fAutoRota(e){
+  if(e && e.target !== e.currentTarget) return;
+  document.getElementById('autoRotO').classList.remove('ab');
+  _autoRotaPontos = [];
+  _autoRotaUrl = '';
+}
+
+function confAutoRota(){
+  if(!_autoRotaUrl){calcularAutoRota();return;}
+  sel.clear();
+  _autoRotaPontos.forEach(p=>{
+    const idx=dF.findIndex(it=>String(it.Num_Incidencia)===String(p.inc));
+    if(idx>=0)sel.add(idx);
+  });
+  updSel();
+  document.getElementById('autoRotO').classList.remove('ab');
+  window.open(_autoRotaUrl,'_blank');
+  destacarAutoRota();
+}
+
+
+
+function destacarAutoRota(){
+  // Popular _rotaMap com os pontos da rota
+  _rotaMap = {};
+  _autoRotaPontos.forEach((p,i)=>{
+    _rotaMap[String(p.inc)] = i+1;
+  });
+  // Re-renderizar tabela para mostrar coluna ROTA
+  rT();
+}
+
+function limparRota(){
+  _rotaMap = {};
+  _autoRotaPontos = [];
+  _autoRotaUrl = '';
+  rT();
+}
+
+
+function calcularEstimativa(pontos){
+  // pontos = [{lat, lng}, ...]
+  let distTotal = 0;
+  for(let i=0;i<pontos.length-1;i++){
+    distTotal += haversine(pontos[i].lat, pontos[i].lng, pontos[i+1].lat, pontos[i+1].lng);
+  }
+  const velocidade = 40; // km/h média urbana
+  const tempoH = distTotal / velocidade;
+  const tempoMin = Math.round(tempoH * 60);
+  return {
+    km: distTotal.toFixed(1),
+    min: tempoMin,
+    hStr: tempoMin >= 60 ? Math.floor(tempoMin/60)+'h '+( tempoMin%60>0?(tempoMin%60)+'min':'') : tempoMin+'min'
+  };
+}
+
+function blocoEstimativa(est){
+  return '<div style="background:#f4f7fb;border:1px solid #dce3ec;border-radius:8px;padding:10px 14px;margin-top:10px;font-family:Barlow Condensed,sans-serif;">'+
+    '<div style="display:flex;gap:16px;margin-bottom:6px;">'+
+    '<span style="font-size:14px;font-weight:700;">📏 Distância estimada: <b>'+est.km+' km</b></span>'+
+    '<span style="font-size:14px;font-weight:700;">⏱ Tempo estimado: <b>'+est.hStr+'</b></span>'+
+    '</div>'+
+    '<div style="font-size:11px;color:#78909c;line-height:1.4;">⚠️ <i>Estimativa aproximada em linha reta entre coordenadas GPS. A distância e o tempo reais de percurso pelas vias podem ser significativamente maiores.</i></div>'+
+    '</div>';
+}
+
+function showAviso(msg, ico){
+  document.getElementById('avisoMsg').textContent = msg;
+  document.getElementById('avisoIco').textContent = ico || '⚠️';
+  document.getElementById('avisoO').classList.add('ab');
+}
+
+// ── HEADER TABELA ──
+function rH(){
+  const tr=document.getElementById('th');tr.innerHTML='';
+  const tf=document.getElementById('th-filters');tf.innerHTML='';
+  const vis=cols.filter(c=>c.v);
+  const NO_FILTER=['dur','est','csh','gps','obc','obs','rot'];
+  const IS_NUM=['inc','cli','med','avi'];
+  vis.forEach((col,vi)=>{
+    const w=widths[col.id]||col.w||140;
+
+    // ── CÉLULA TÍTULO ──
+    const th=document.createElement('th');
+    th.style.width=w+'px';th.style.minWidth=w+'px';th.style.maxWidth=w+'px';th.style.position='sticky';
+    th.innerHTML='<span>'+col.lb+'</span><div class="resize-handle" style="position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;background:rgba(255,255,255,.2);opacity:0;transition:opacity .2s;"></div>';
+    const esp=col.id==='gps'||col.id==='obs'||col.id==='obc';
+    if(!esp){th.classList.add('s');th.onclick=e=>{if(e.target.classList.contains('resize-handle'))return;sortBy(vi,col);};}
+    if(oCI===vi)th.classList.add(oAs?'sa':'sd');
+    th.draggable=true;
+    th.ondragstart=e=>{if(e.target.classList.contains('resize-handle')){e.preventDefault();return;}dSrc=vi;th.style.opacity='.4';e.dataTransfer.effectAllowed='move';};
+    th.ondragend=()=>{th.style.opacity='';document.querySelectorAll('#th th').forEach(t=>t.style.borderLeft='');};
+    th.ondragover=e=>{e.preventDefault();th.style.borderLeft='3px solid #fff';};
+    th.ondragleave=()=>th.style.borderLeft='';
+    th.ondrop=e=>{e.preventDefault();th.style.borderLeft='';if(dSrc===vi)return;
+      const sId=vis[dSrc].id,dId=vis[vi].id,si=cols.findIndex(c=>c.id===sId),di=cols.findIndex(c=>c.id===dId);
+      const[m]=cols.splice(si,1);cols.splice(di,0,m);saveCols();oCI=-1;rH();rT();};
+
+    // ── CÉLULA FILTRO ──
+    const fth=document.createElement('th');
+    fth.style.width=w+'px';fth.style.minWidth=w+'px';fth.style.maxWidth=w+'px';
+    if(NO_FILTER.includes(col.id)){
+      fth.classList.add('sem');
+    } else if(['are','cir','via','tip'].includes(col.id)){
+      // Botão dropdown de seleção múltipla
+      const wrap=document.createElement('div');
+      wrap.className='area-drop-wrap';
+      const btn=document.createElement('button');
+      btn.className='area-drop-btn';
+      btn.id='dropBtn_'+col.id;
+      const labels={are:'🗂 ÁREA',cir:'⚡ CIRCUITO',via:'🚗 VIATURA',tip:'📋 TIPO'};
+      btn.innerHTML='<span id="dropBtnTxt_'+col.id+'">'+labels[col.id]+'</span><span class="adt-arrow">▼</span>';
+      btn.onclick=e=>{e.stopPropagation();abrirDropTab(col.id,btn);};
+      wrap.appendChild(btn);
+      fth.appendChild(wrap);
+    } else {
+      const isNum=IS_NUM.includes(col.id);
+      const inp=document.createElement('input');
+      inp.className='fi2';inp.type='text';inp.dataset.colid=col.id;inp.placeholder='🔍';
+      if(isNum)inp.inputMode='numeric';
+      inp.oninput=function(){
+        if(isNum)this.value=this.value.replace(/\D/g,'');
+        xbtn.classList.toggle('v',this.value.length>0);
+        aFilt();
+      };
+      const xbtn=document.createElement('button');
+      xbtn.className='fx2';xbtn.textContent='✕';
+      xbtn.onclick=e=>{e.stopPropagation();inp.value='';xbtn.classList.remove('v');aFilt();};
+      const wrap=document.createElement('div');
+      wrap.className='fi2-wrap';
+      wrap.appendChild(inp);
+      wrap.appendChild(xbtn);
+      fth.appendChild(wrap);
+    }
+
+    // ── RESIZE (sincroniza título + filtro + células) ──
+    const rh=th.querySelector('.resize-handle');
+    rh.addEventListener('mousedown',e=>{
+      e.preventDefault();e.stopPropagation();
+      const startX=e.clientX,startW=widths[col.id]||col.w||140;
+      const onMove=ev=>{
+        const nw=Math.max(50,startW+(ev.clientX-startX));
+        widths[col.id]=nw;
+        [th,fth].forEach(el=>{el.style.width=nw+'px';el.style.minWidth=nw+'px';el.style.maxWidth=nw+'px';});
+        document.querySelectorAll('#tb tr').forEach(row=>{const td=row.cells[vi];if(td){td.style.width=nw+'px';td.style.minWidth=nw+'px';td.style.maxWidth=nw+'px';}});
+      };
+      const onUp=()=>{saveWidths();document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);};
+      document.addEventListener('mousemove',onMove);
+      document.addEventListener('mouseup',onUp);
+    });
+
+    tr.appendChild(th);
+    tf.appendChild(fth);
+  });
+  // Calcular top do th-filters baseado na altura real do #th
+  requestAnimationFrame(()=>{
+    const thHeight=document.getElementById('th').getBoundingClientRect().height;
+    document.querySelectorAll('#th-filters th').forEach(t=>t.style.top=thHeight+'px');
+  });
+}
+
+// ── RENDERIZAR TABELA ──
+function rT(){
+  const tb=document.getElementById('tb');tb.innerHTML='';
+  const vis=cols.filter(c=>c.v);let venc=0;
+  const ts=parseInt(localStorage.getItem(SKT)||'0');
+  const dec=ts?Math.floor((Date.now()-ts)/1000):0;
+
+  dF.forEach((item,idx)=>{
+    const sb=pSeg(item.Duracao);
+    const sa=sb!==null?sb+dec:null;
+    const hDec=sa!==null?sa/3600:null;
+    const sc=semClass(hDec);
+    if(sa!==null&&sa>86400)venc++;
+    const inc=String(item.Num_Incidencia||''),ob=obsMap[inc]||'';
+    const coord=gCoord(item);
+    const totalAv=parseInt(item.Total_Avisos)||0;
+    const tipoOrig=(item.Tipo_Reclamacao||'').toUpperCase().trim();
+    const tipo=totalAv>1&&tipoOrig==='FALTA DE ENERGIA NO CONSUMIDOR'?'FALTA EM VÁRIOS CONSUMIDORES':tipoOrig;
+
+    const tr=document.createElement('tr');tr.dataset.idx=idx;
+    if(sc==='vermelho')tr.classList.add('vc');
+    if(sel.has(idx))tr.classList.add('sel');
+
+    vis.forEach((col,vi)=>{
+      const w=widths[col.id]||col.w||140;
+      const td=document.createElement('td');
+      td.style.width=w+'px';td.style.minWidth=w+'px';td.style.maxWidth=w+'px';
+
+      if(col.id==='inc'){
+        td.className='n';
+        const btn=document.createElement('button');
+        btn.textContent=inc;
+        btn.onclick=e=>{e.stopPropagation();togglePreview(item,btn);};
+        td.appendChild(btn);
+      }
+      else if(col.id==='dur'){
+        td.dataset.sb=sb!==null?sb:'';
+        let durAtual=item.Duracao||'—';
+        if(sa!==null){const dh=Math.floor(sa/3600),dm=Math.floor((sa%3600)/60),ds=sa%60;durAtual=String(dh).padStart(2,'0')+':'+String(dm).padStart(2,'0')+':'+String(ds).padStart(2,'0');}
+        td.innerHTML='<span style="display:inline-flex;align-items:center;gap:6px;font-weight:700;font-variant-numeric:tabular-nums;"><img class="dur-dot" src="'+dotIcon(sa)+'" style="width:16px;height:16px;object-fit:contain;flex-shrink:0;"><span class="dur-txt">'+durAtual+'</span></span>';
+      }
+      else if(col.id==='are'){td.className='bk-cell';td.innerHTML=item.Area_Despacho?'<span class="bk ar">'+item.Area_Despacho+'</span>':'—';}
+      else if(col.id==='cir'){
+        const v=item.Circuito||'';
+        if(!v||v.trim()===''||v.trim()==='—'||v.trim()==='-'){td.classList.add('cell-vazia');td.dataset.vazia='1';}
+        else{td.className='bk-cell';td.innerHTML='<span class="bk ci">'+v+'</span>';}
+      }
+      else if(col.id==='via'){
+        const v=item.Viatura||'';
+        if(!v||v.trim()===''||v.trim()==='—'||v.trim()==='-'||v.trim().length<=3){td.classList.add('cell-vazia');td.dataset.vazia='1';}
+        else{td.className='bk-cell';td.innerHTML='<span class="bk vi">'+v+'</span>';}
+      }
+      else if(col.id==='avi'){const av=parseInt(item.Total_Avisos)||0;const avCls=av<=1?'av-n':av<=5?'av-a':'av-r';td.innerHTML=av?'<span class="bk '+avCls+'">'+av+'</span>':'—';}
+      else if(col.id==='gps'){
+        if(!coord){td.classList.add('cell-vazia');td.dataset.vazia='1';}
+        else{td.className='c';td.style.padding='0';const img=document.createElement('img');img.src='mapa.png';img.className='mapa-ico';img.style.cssText='height:30px;width:30px;object-fit:contain;cursor:pointer;display:block;margin:auto;';img.title='Abrir no mapa';img.onmouseenter=()=>{img.src='mapa.gif';};img.onmouseleave=()=>{img.src='mapa.png';};img.onclick=e=>aGPS(e,coord);td.appendChild(img);}
+      }
+      else if(col.id==='obc'){
+        // OBS. CLIENTE — truncada com tooltip
+        const obsVal=item.Observacao_Cliente||'';
+        if(obsVal){
+          td.className='obs-tip';
+          const obsUp=obsVal.toUpperCase();
+          td.textContent=obsUp.length>30?obsUp.substring(0,30)+'…':obsUp;
+          const bubble=document.createElement('div');
+          bubble.className='obs-bubble';
+          bubble.textContent=obsUp;
+          td.appendChild(bubble);
+          // Posicionar bubble
+          td.addEventListener('mouseenter',()=>{
+            const rect=td.getBoundingClientRect();
+            bubble.style.top=(rect.bottom+4)+'px';
+            bubble.style.left=Math.min(rect.left,window.innerWidth-330)+'px';
+            bubble.style.display='block';
+          });
+          td.addEventListener('mouseleave',()=>{bubble.style.display='none';});
+        } else td.textContent='—';
+      }
+      else if(col.id==='obs'){
+        td.className='o';
+        const inp=document.createElement('input');
+        inp.type='text';inp.value=ob;inp.placeholder='Observação...';
+        inp.onchange=()=>{obsMap[inc]=inp.value;try{localStorage.setItem(SKO,JSON.stringify(obsMap));}catch(e){}};
+        inp.onclick=e=>e.stopPropagation();
+        td.appendChild(inp);
+      }
+      else if(col.id==='tel'||col.id==='tel2'){
+        const raw=item[col.id==='tel'?'Telefone_1':'Telefone_2'];
+        const rawStr=String(raw||'').trim();
+        if(!rawStr||rawStr==='—'||rawStr==='-'||rawStr==='0'||rawStr.replace(/\D/g,'').length<4){
+          td.classList.add('cell-vazia');td.dataset.vazia='1';
+        } else {
+        td.className='bk-cell';
+        const t=normalizarTel(raw);
+        if(!t){td.textContent='—';}
+        else if(t.valido){
+          const btn=document.createElement('span');
+          btn.className='bk tel-ok';
+          btn.textContent=t.fmt||raw;
+          btn.title='';
+          // Tooltip com número original
+          const bubble=document.createElement('div');
+          bubble.className='obs-bubble';
+          bubble.textContent='';
+          const linha1=document.createElement('div');
+          linha1.textContent='👆 Toque para iniciar conversa';
+          linha1.style.cssText='opacity:.8;margin-bottom:6px;';
+          const linha2=document.createElement('div');
+          linha2.textContent='📞 Original: '+String(raw||'');
+          linha2.style.cssText='opacity:.6;';
+          bubble.appendChild(linha1);
+          bubble.appendChild(linha2);
+          btn.style.position='relative';
+          btn.onmouseenter=e=>{
+            document.body.appendChild(bubble);
+            const r=btn.getBoundingClientRect();
+            bubble.style.top=(r.bottom+6)+'px';
+            bubble.style.left=Math.min(r.left,window.innerWidth-330)+'px';
+            bubble.style.display='block';
+          };
+          btn.onmouseleave=()=>{bubble.style.display='none';};
+          btn.onclick=e=>{e.stopPropagation();window.open('https://wa.me/55'+t.num,'_blank');};
+          td.appendChild(btn);
+        } else {
+          const sp=document.createElement('span');
+          sp.className='bk tel-inv';
+          sp.textContent=t.fmt||String(raw);
+          // Tooltip com número original
+          const bubble=document.createElement('div');
+          bubble.className='obs-bubble';
+          bubble.textContent='📞 Original: '+String(raw||'')+(t.fixo?' (fixo)':' (inválido)');
+          sp.onmouseenter=e=>{
+            document.body.appendChild(bubble);
+            const r=sp.getBoundingClientRect();
+            bubble.style.top=(r.bottom+6)+'px';
+            bubble.style.left=Math.min(r.left,window.innerWidth-330)+'px';
+            bubble.style.display='block';
+          };
+          sp.onmouseleave=()=>{bubble.style.display='none';};
+          td.appendChild(sp);
+        }
+        } // fim else vazio tel
+      }
+      else if(col.id==='end'){td.textContent=(item.Endereco||'').toUpperCase()||'—';}
+      else if(col.id==='nom'){
+        const v=(item.Cliente||'').trim();
+        const nomInv=!v||v==='—'||v==='-'||v==='.'||v.replace(/[.\-—\s]/g,'').length===0;
+        if(nomInv){td.classList.add('cell-vazia');td.dataset.vazia='1';}
+        else{td.textContent=v.toUpperCase();}
+      }
+      else if(col.id==='rot'){
+        td.className='rot-num';
+        td.style.textAlign='center';
+        const numRota=_rotaMap[String(item.Num_Incidencia)];
+        if(numRota!==undefined){
+          td.textContent=numRota;
+          tr.classList.add('rota-ativa');
+        } else {
+          td.textContent='';
+        }
+      }
+      else if(col.id==='med'){
+        const v=item.Medidor;
+        const medNum=v?String(v).replace(/^ES:\s*/i,'').trim():'';
+        if(!medNum||medNum==='—'||medNum==='-'||medNum.replace(/\D/g,'').length===0){
+          td.classList.add('cell-vazia');td.dataset.vazia='1';
+        } else {
+          td.textContent=medNum;
+        }
+      }
+      else if(col.id==='ref'){
+        const rawRef=(item.Ponto_de_Referencia||'').trim();
+        if(rawRef){
+          // Ocultar parte GPS — pegar só o que vem após " - "
+          const sepIdx=rawRef.indexOf(' - ');
+          const refTxt=(sepIdx>=0?rawRef.substring(sepIdx+3):rawRef).trim().toUpperCase();
+          td.textContent=refTxt.length>30?refTxt.substring(0,30)+'…':refTxt;
+          // Tooltip igual OBS. CLIENTE
+          const bubble=document.createElement('div');
+          bubble.className='obs-bubble';
+          bubble.textContent=refTxt;
+          td.appendChild(bubble);
+          td.addEventListener('mouseenter',()=>{
+            const rect=td.getBoundingClientRect();
+            bubble.style.top=(rect.bottom+4)+'px';
+            bubble.style.left=Math.min(rect.left,window.innerWidth-330)+'px';
+            bubble.style.display='block';
+          });
+          td.addEventListener('mouseleave',()=>{bubble.style.display='none';});
+          td.dataset.refTxt=refTxt; // para contextmenu
+        } else td.textContent='—';
+      }
+      else{
+        const v=item[col.cp];
+        const txt=(v!==undefined&&v!==null&&v!=='')?String(v):'';
+        // Célula vazia: sem dado, só traço ou ≤3 chars
+        const vazio=!txt||txt.trim()===''||txt.trim()==='—'||txt.trim()==='-'||txt.trim().length<=3;
+        if(vazio&&col.id!=='niv'){
+          td.textContent='';
+          td.classList.add('cell-vazia');
+          td.dataset.vazia='1';
+        } else {
+          td.textContent=txt;
+        }
+      }
+      tr.appendChild(td);
+    });
+
+    tr.addEventListener('click',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='BUTTON')return;
+      e.preventDefault();
+      if(e.shiftKey&&lastSelIdx!==-1){
+        const from=Math.min(lastSelIdx,idx),to=Math.max(lastSelIdx,idx);
+        for(let i=from;i<=to;i++)sel.add(i);
+        lastSelIdx=idx;
+      } else if(e.ctrlKey||e.metaKey){
+        sel.has(idx)?sel.delete(idx):sel.add(idx);
+        lastSelIdx=idx;
+      } else {
+        sel.clear();sel.add(idx);lastSelIdx=idx;
+      }
+      updSel();});
+    // Contextmenu em cada td
+    Array.from(tr.cells).forEach(td=>{
+      td.addEventListener('contextmenu', e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        // Para ref: usar dataset.refTxt; para obc: maiúsculo; default: textContent
+        if(td.dataset.vazia==='1'){_ctxVal='';fecharCtx();return;}
+        if(td.dataset.refTxt) _ctxVal=td.dataset.refTxt;
+        else if(td.classList.contains('obs-tip')) _ctxVal=(td.textContent||'').replace(/…$/, '').trim().toUpperCase();
+        else _ctxVal=td.textContent.trim()||td.querySelector('input')?.value||td.querySelector('span')?.textContent||'';
+        const menu=document.getElementById('ctxMenu');
+        menu.style.display='block';
+        const mx=Math.min(e.clientX, window.innerWidth-170);
+        const my=Math.min(e.clientY, window.innerHeight-50);
+        menu.style.left=mx+'px';
+        menu.style.top=my+'px';
+      });
+    });
+    tb.appendChild(tr);
+  });
+  document.getElementById('sT').textContent=dF.length;
+  document.getElementById('sV').textContent=venc;
+  const btnV=document.getElementById('btnVenc');if(btnV)btnV.disabled=venc===0&&!_soVencidas;
+  updSel();
+}
+
+function updSel(){
+  document.querySelectorAll('#tb tr').forEach(tr=>tr.classList.toggle('sel',sel.has(parseInt(tr.dataset.idx))));
+  const n=sel.size;
+  document.getElementById('sbg').textContent=n;
+  document.getElementById('bR').disabled=n<2;
+  document.getElementById('btnAutoRota').disabled=n<1;
+  document.getElementById('sS').textContent=n;
+}
+
+// ── FILTROS ──
+function nrm(v){return String(v||'').trim().replace(/^0+/,'').toUpperCase();}
+function nrS(v){return String(v||'').trim().toUpperCase();}
+function oF(el,cId){document.getElementById(cId).classList.toggle('v',el.value.length>0);aFilt();}
+function lC(iId,cId){document.getElementById(iId).value='';document.getElementById(cId).classList.remove('v');aFilt();}
+let _soVencidas=false;
+function filtrarVencidas(){
+  _soVencidas=!_soVencidas;
+  const btn=document.getElementById('btnVenc');
+  btn.style.background=_soVencidas?'#c62828':'';
+  btn.style.color=_soVencidas?'#fff':'';
+  btn.style.borderColor=_soVencidas?'#c62828':'';
+  aFilt();
+}
+function lTodos(){
+  document.querySelectorAll('#th-filters .fi2').forEach(inp=>inp.value='');
+  document.querySelectorAll('#th-filters .fx2').forEach(x=>x.classList.remove('v'));
+  Object.keys(_dropSel).forEach(id=>{_dropSel[id].clear();atualizarBtnDropTab(id);});
+  salvarDrops();
+  _soVencidas=false;
+  const btn=document.getElementById('btnVenc');
+  if(btn){btn.classList.remove('ativo');}
+  dF=[...dO];if(oCI>=0)apOrdem();sel.clear();rT();
+  const bL=document.getElementById('btnLimpar');if(bL)bL.disabled=true;
+  const alerta=document.getElementById('alertFiltros');if(alerta)alerta.style.display='none';
+}
+function aFilt(){
+  const FMAP={
+    inc:{fn:'nrm',cp:'Num_Incidencia'}, cli:{fn:'nrm',cp:'Num_Cliente'},
+    med:{fn:'nrm',cp:'Medidor'},        avi:{fn:'nrm',cp:'Total_Avisos'},
+    nom:{fn:'nrS',cp:'Cliente'},        tip:{fn:'nrS',cp:'Tipo_Reclamacao'},
+    end:{fn:'nrS',cp:'Endereco'},       are:{fn:'nrS',cp:'Area_Despacho'},
+    cir:{fn:'nrS',cp:'Circuito'},       via:{fn:'nrS',cp:'Viatura'},
+    niv:{fn:'nrS',cp:'Nivel_Tensao'},   pel:{fn:'nrS',cp:'Ponto_Eletrico'},
+    ref:{fn:'nrS',cp:'Ponto_de_Referencia'}, tel:{fn:'nrS',cp:'Telefone_1'},
+  };
+  const vals={};
+  document.querySelectorAll('#th-filters .fi2').forEach(inp=>{
+    if(inp.value.trim())vals[inp.dataset.colid]=inp.value.trim();
+  });
+  const ts2=parseInt(localStorage.getItem(SKT)||'0');
+  const dec2=ts2?Math.floor((Date.now()-ts2)/1000):0;
+  dF=dO.filter(it=>{
+    // Filtros de seleção múltipla (área, circuito, viatura, tipo)
+    if(_dropSel.are.size>0){const v=(it.Area_Despacho||'').trim().toUpperCase();if(!_dropSel.are.has(v))return false;}
+    if(_dropSel.cir.size>0){const v=(it.Circuito||'').trim().toUpperCase();if(!_dropSel.cir.has(v))return false;}
+    if(_dropSel.via.size>0){const v=(it.Viatura||'').trim().toUpperCase();if(!_dropSel.via.has(v))return false;}
+    if(_dropSel.tip.size>0){const v=(it.Tipo_Reclamacao||'').trim().toUpperCase();if(!_dropSel.tip.has(v))return false;}
+    // Filtros dos inputs da thead
+    for(const[id,val] of Object.entries(vals)){
+      const m=FMAP[id];if(!m)continue;
+      const fn=m.fn==='nrm'?nrm:nrS;
+      if(!fn(it[m.cp]).includes(fn(val)))return false;
+    }
+    if(_soVencidas){const sb=pSeg(it.Duracao);const sa=sb!==null?sb+dec2:null;if(sa===null||sa<=24*3600)return false;}
+    return true;
+  });
+  if(oCI>=0)apOrdem();sel.clear();rT();
+  // Atualizar dropdown aberto se houver — respeitar texto de busca digitado
+  if(_dropAberto){
+    const busca=(document.getElementById('dropBusca_'+_dropAberto)?.value||'').trim();
+    if(busca) filtrarOpcoesDropTab(_dropAberto);
+    else popularDropTab(_dropAberto);
+  }
+  // Alerta filtros ativos
+  const temDrop=Object.keys(_dropSel).some(id=>_dropSel[id].size>0);
+  const temInput=[...(document.querySelectorAll('#th-filters .fi2')||[])].some(i=>i.value.trim());
+  const alerta=document.getElementById('alertFiltros');
+  const temFiltro=temDrop||temInput||_soVencidas;
+  if(alerta)alerta.style.display=temFiltro?'':'none';
+  const btnL=document.getElementById('btnLimpar');if(btnL)btnL.disabled=!temFiltro;
+}
+
+// ── ORDENAÇÃO ──
+function sortBy(vi,col){
+  if(oCI===vi)oAs=!oAs;else{oCI=vi;oAs=true;}
+  document.querySelectorAll('#th th').forEach((th,i)=>{th.classList.remove('sa','sd');if(i===vi)th.classList.add(oAs?'sa':'sd');});
+  // Salvar ordem
+  try{localStorage.setItem(SKOR,JSON.stringify({colId:col.id,asc:oAs}));}catch(e){}
+  apOrdem(col);sel.clear();rT();
+}
+function apOrdem(col){
+  const vis=cols.filter(c=>c.v);const c=col||vis[oCI];if(!c)return;
+  const ts=parseInt(localStorage.getItem(SKT)||'0');const dec=ts?Math.floor((Date.now()-ts)/1000):0;
+  dF.sort((a,b)=>{
+    if(c.id==='dur'){const sa=(pSeg(a.Duracao)??-1)+dec,sb=(pSeg(b.Duracao)??-1)+dec;return oAs?sb-sa:sa-sb;}
+    if(c.id==='rot'){
+      const ra=_rotaMap[String(a.Num_Incidencia)];
+      const rb=_rotaMap[String(b.Num_Incidencia)];
+      // Vazias sempre no final independente da direção
+      if(ra===undefined&&rb===undefined)return 0;
+      if(ra===undefined)return 1;
+      if(rb===undefined)return -1;
+      return oAs?ra-rb:rb-ra;
+    }
+    const vA=String(a[c.cp]||'').toUpperCase(),vB=String(b[c.cp]||'').toUpperCase();
+    const cm=vA.localeCompare(vB,'pt-BR',{numeric:true});return oAs?cm:-cm;
+  });
+}
+
+// ── GPS ──
+function aGPS(e,cs){e.stopPropagation();window.open('https://www.google.com/maps?q='+cs,'_blank');}
+
+// ── ROTEIRIZAÇÃO ──
+function abrirRota(){
+  if(sel.size<2)return;
+  const pts=[...sel].map(idx=>dF[idx]).map(it=>{const c=gCoord(it);return c?{inc:it.Num_Incidencia,end:it.Endereco||'',coord:c}:null;}).filter(Boolean);
+  if(pts.length<2){showAviso('Selecione 2 ou mais incidências com GPS válido para roteirizar.','🗺️');return;}
+  const lim=pts.slice(0,11);
+  urlR='https://www.google.com/maps/dir/?api=1&origin='+lim[0].coord+'&destination='+lim[lim.length-1].coord;
+  const wps=lim.slice(1,-1).map(p=>p.coord);if(wps.length)urlR+='&waypoints='+wps.join('|');
+  document.getElementById('rAv').innerHTML=pts.length>11?'<div class="rav">⚠️ Limite Google Maps: usando 11 pontos.</div>':'';
+  const estMan=calcularEstimativa(lim.map(p=>{const c=p.coord.split(',');return{lat:parseFloat(c[0]),lng:parseFloat(c[1])};}));
+  document.getElementById('rIt').innerHTML=lim.map((p,i)=>'<div class="ri"><div class="rn">'+(i+1)+'</div><div class="rii"><div class="a">'+p.inc+'</div><div class="b">📍 '+(p.end||'—')+'</div><div class="c">📡 '+p.coord+'</div></div></div>').join('')+blocoEstimativa(estMan);
+  document.getElementById('rotO').classList.add('ab');
+}
+function fRota(e){if(e&&e.target!==e.currentTarget)return;document.getElementById('rotO').classList.remove('ab');}
+function confRota(){if(urlR)window.open(urlR,'_blank');document.getElementById('rotO').classList.remove('ab');}
+
+// ── CFG COLUNAS ──
+function abrirCfg(){rCfg();document.getElementById('cfgO').classList.add('ab');}
+
+function fecharCfgSemAplicar(){
+  document.getElementById('cfgO').classList.remove('ab');
+  // Reverter para configuração salva sem aplicar
+  loadCols();carregarTitulos();rH();rT();
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    if(document.getElementById('cfgO').classList.contains('ab')){
+      fecharCfgSemAplicar();
+    }
+    if(document.getElementById('avisoO').classList.contains('ab')){
+      document.getElementById('avisoO').classList.remove('ab');
+    }
+  }
+});
+
+function fCfg(e){if(e&&e.target!==document.getElementById('cfgO')&&e!==undefined&&e.target)return;document.getElementById('cfgO').classList.remove('ab');saveCols();rH();rT();}
+function rCfg(){
+  const lista=document.getElementById('cfgL');lista.innerHTML='';
+  cols.forEach((col,gi)=>{
+    const div=document.createElement('div');div.className='ci';div.draggable=true;div.dataset.gi=gi;
+    if(!col._lbOrig)col._lbOrig=col.lb;
+    const wAtual=widths[col.id]||col.w||140;
+    div.innerHTML='<span class="ch">⋮⋮</span><div class="cn-wrap"><input class="cn-input" value="'+col.lb.replace(/"/g,'&quot;')+'" title="Editar título" data-gi="'+gi+'"><button class="cn-reset" title="Redefinir" data-gi="'+gi+'" onclick="redefinirTitulo('+gi+')">↺</button></div><input class="cn-w" type="number" min="50" max="600" value="'+wAtual+'" data-cid="'+col.id+'" title="Largura em px"><span class="cn-wpx">px</span><button class="ct '+(col.v?'on':'off')+'" onclick="togCol('+gi+',this)"></button>';
+    // Salvar título ao editar
+    const inp=div.querySelector('.cn-input');
+    inp.addEventListener('input',function(){cols[parseInt(this.dataset.gi)].lb=this.value||col._lbOrig;salvarTitulos();rH();});
+    // Salvar largura ao editar
+    const winp=div.querySelector('.cn-w');
+    function aplicarLargura(inp){
+      const nw=Math.min(600,Math.max(50,parseInt(inp.value)||140));
+      inp.value=nw;
+      widths[inp.dataset.cid]=nw;
+      saveWidths();rH();rT();
+    }
+    winp.addEventListener('change',function(){aplicarLargura(this);});
+    winp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();aplicarLargura(this);}});
+    div.ondragstart=()=>{cDSrc=gi;div.classList.add('dg');};
+    div.ondragend=()=>{div.classList.remove('dg');document.querySelectorAll('.ci').forEach(d=>d.classList.remove('dov2'));};
+    div.ondragover=e=>{e.preventDefault();div.classList.add('dov2');};
+    div.ondragleave=()=>div.classList.remove('dov2');
+    div.ondrop=e=>{e.preventDefault();div.classList.remove('dov2');const to=parseInt(div.dataset.gi);if(cDSrc===to)return;const[m]=cols.splice(cDSrc,1);cols.splice(to,0,m);rCfg();};
+    lista.appendChild(div);
+  });
+}
+function exportCfg(){
+  const cfg=cols.map(c=>({id:c.id,lb:c.lb,v:c.v,w:widths[c.id]||c.w||140}));
+  const json=JSON.stringify(cfg,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='tabela_colunas_config.json';
+  a.click();
+}
+function marcarTodas(){cols.forEach(c=>c.v=true);rCfg();}
+function desmarcarTodas(){cols.forEach(c=>c.v=false);rCfg();}
+function redefinirTitulo(gi){
+  const c=cols[gi];
+  if(c._lbOrig){c.lb=c._lbOrig;}
+  salvarTitulos();rCfg();rH();
+}
+function togCol(gi,btn){cols[gi].v=!cols[gi].v;btn.className='ct '+(cols[gi].v?'on':'off');}
+
+// ── PREVIEW CARD ──
+let _pvOpen = false;
+let _pvBtn  = null;
+
+function togglePreview(item, btn) {
+  const pv = document.getElementById('pvCard');
+  // Se já está aberto para este item, fecha
+  if (_pvOpen && _pvBtn === btn) {
+    pv.style.display = 'none';
+    _pvOpen = false;
+    _pvBtn = null;
+    return;
+  }
+  window._pvItem = item;
+  _pvBtn = btn;
+  _pvOpen = true;
+  buildPreview(item);
+  pv.style.display = 'block';
+  positionPreview(btn);
+}
+
+function positionPreview(ref) {
+  const pv = document.getElementById('pvCard');
+  const rect = ref.getBoundingClientRect();
+  const pw = 780, ph = pv.offsetHeight || 500;
+  let top = rect.bottom + 6, left = rect.left;
+  if (top + ph > window.innerHeight) top = Math.max(4, rect.top - ph - 6);
+  if (left + pw > window.innerWidth) left = window.innerWidth - pw - 8;
+  if (left < 4) left = 4;
+  pv.style.top = top + 'px';
+  pv.style.left = left + 'px';
+}
+
+// Fechar ao clicar fora (só se não estiver arrastando)
+document.addEventListener('click', e => {
+  if(_pvDragging)return;
+  const pv = document.getElementById('pvCard');
+  if (!pv.contains(e.target) && !e.target.closest('td.n')) {
+    pv.style.display = 'none';
+    _pvOpen = false;
+    _pvBtn = null;
+  }
+});
+
+// ── DRAG DO PREVIEW CARD ──
+let _pvDragging=false;
+(function(){
+  let startX,startY,startL,startT;
+  function getHdr(){return document.querySelector('#pvCard .pv-hdr');}
+  document.addEventListener('mousedown',e=>{
+    const hdr=getHdr();
+    if(!hdr||!hdr.contains(e.target)||e.target.closest('button'))return;
+    const pv=document.getElementById('pvCard');
+    startX=e.clientX;startY=e.clientY;
+    startL=parseInt(pv.style.left)||0;startT=parseInt(pv.style.top)||0;
+    _pvDragging=false;
+    function onMove(ev){
+      const dx=ev.clientX-startX,dy=ev.clientY-startY;
+      if(!_pvDragging&&Math.abs(dx)+Math.abs(dy)<4)return;
+      _pvDragging=true;
+      pv.style.left=Math.max(0,startL+dx)+'px';
+      pv.style.top=Math.max(0,startT+dy)+'px';
+    }
+    function onUp(){
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+      setTimeout(()=>{_pvDragging=false;},50);
+    }
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  });
+})();
+
+function buildPreview(item) {
+  window._pvItem=item;
+  const ts=parseInt(localStorage.getItem(SKT)||'0');
+  const dec=ts?Math.floor((Date.now()-ts)/1000):0;
+  const sb=pSeg(item.Duracao);
+  const sa=sb!==null?sb+dec:null;
+  const hDec=sa!==null?sa/3600:null;
+  const sc=semClass(hDec);
+  const flt=fltClass(hDec);
+  const prazo=24*3600,rest=sa!==null?prazo-sa:null;
+  const restStr=fmtRest(rest);
+  const totalAv=parseInt(item.Total_Avisos)||0;
+
+  // Header
+  document.getElementById('pv-inc').textContent='📄 DETALHE — INCIDÊNCIA '+(item.Num_Incidencia||'');
+  const vital=/vital/i.test([item.Cliente,item.Comentario,item.Observacao_Cliente,item.Tipo_Reclamacao].join(' '));
+  document.getElementById('pv-badge').style.display=vital?'':'none';
+
+  // ── Painel esquerdo: grid de campos ──
+  const vis=cols.filter(c=>c.v&&c.id!=='gps'&&c.id!=='obs');
+  const grid=document.getElementById('pv-grid');grid.innerHTML='';
+  const CAMPOS=[
+    {id:'inc', label:'Nº INCIDÊNCIA',    val:item.Num_Incidencia, destaque:true},
+    {id:'nom', label:'CLIENTE',          val:item.Cliente},
+    {id:'cli', label:'Nº CLIENTE',       val:item.Num_Cliente},
+    {id:'med', label:'MEDIDOR',          val:item.Medidor, fmt:'med'},
+    {id:'are', label:'ÁREA DE DESPACHO', val:item.Area_Despacho},
+    {id:'via', label:'VIATURA',          val:item.Viatura, vermelho:true},
+    {id:'cir', label:'CIRCUITO',         val:item.Circuito},
+    {id:'pel', label:'PONTO ELÉTRICO',   val:item.Ponto_Eletrico},
+    {id:'tip', label:'TIPO RECLAMAÇÃO',  val:item.Tipo_Reclamacao, full:true},
+    {id:'end', label:'ENDEREÇO',         val:item.Endereco, full:true},
+    {id:'ref', label:'REFERÊNCIA',       val:item.Ponto_de_Referencia, full:true},
+    {id:'niv', label:'NÍVEL TENSÃO',     val:item.Nivel_Tensao},
+    {id:'est', label:'ESTADO',           val:item.Estado},
+    {id:'dur', label:'DURAÇÃO',          val:item.Duracao, dur:true, sa:sa, sc:sc, flt:flt, rest:restStr, hDec:hDec},
+    {id:'avi', label:'AVISOS',           val:item.Total_Avisos, avisos:totalAv>1},
+    {id:'csh', label:'CONSUMO (CONSH)',  val:item.Consh},
+    {id:'tel', label:'TELEFONE 1',       val:item.Telefone_1},
+    {id:'tel2',label:'TELEFONE 2',       val:item.Telefone_2},
+    {id:'obc', label:'OBS. CLIENTE',     val:item.Observacao_Cliente, full:true},
+  ];
+  CAMPOS.forEach(c=>{
+    const colVis=vis.find(col=>col.id===c.id);
+    if(!colVis&&!['inc','end','dur','tip'].includes(c.id))return;
+    if(!c.val&&c.val!==0)return;
+    const div=document.createElement('div');div.className='pv-campo'+(c.full?' full':'');
+    const lbl=document.createElement('div');lbl.className='dc-label';lbl.textContent=c.label;div.appendChild(lbl);
+    let valEl;
+    if(c.dur){
+      let durStr=item.Duracao||'—';
+      if(c.sa!==null){const dh=Math.floor(c.sa/3600),dm=Math.floor((c.sa%3600)/60),ds=c.sa%60;durStr=String(dh).padStart(2,'0')+':'+String(dm).padStart(2,'0')+':'+String(ds).padStart(2,'0');}
+      valEl=document.createElement('div');valEl.className='dur-farol dc-value '+c.sc;
+      valEl.dataset.sb=sb!==null?sb:'';
+      const fDot='<span class="farol-dot farol-'+(c.sc==='vermelho'?'vermelho':c.sc==='amarelo-dur'?'amarelo':'verde')+'" id="pv-farol-dot"></span>';
+      const fLive='<span class="faltam-live '+c.flt+'" id="pv-faltam">'+(c.hDec!==null&&c.hDec<0?'VENC +'+c.rest:c.rest?'⏱ '+c.rest:'⏳')+'</span>';
+      valEl.innerHTML=fDot+' <span id="pv-dur-txt">'+durStr+'</span>'+fLive;
+    } else if(c.avisos){
+      valEl=document.createElement('div');valEl.className='dc-value avisos-alerta';valEl.textContent='⚠ '+String(c.val)+' AVISOS';
+    } else {
+      valEl=document.createElement('div');
+      valEl.className='dc-value'+(c.destaque?' destaque':'')+(c.vermelho?' vermelho':'');
+      valEl.textContent=c.fmt==='med'?uMed(c.val):String(c.val).toUpperCase();
+    }
+    div.appendChild(valEl);grid.appendChild(div);
+  });
+
+  // ── Painel direito: mensagem visual sem asteriscos ──
+  const msgEl=document.getElementById('pv-msg');msgEl.innerHTML='';
+  function cl(c){if(!c)return null;const p=String(c).split(',');return p.length>=2?'https://www.google.com/maps?q='+p[0].trim()+','+p[1].trim():null;}
+  const tipoOrig=(item.Tipo_Reclamacao||'').toUpperCase().trim();
+  const tipoFinal=totalAv>1&&tipoOrig==='FALTA DE ENERGIA NO CONSUMIDOR'?'FALTA DE ENERGIA EM VÁRIOS CONSUMIDORES':tipoOrig;
+  const lD=cl(item.Coordenada_Dispositivo),lC=cl(item.Coordenada_Cliente);
+  let durStr2=item.Duracao||'—';
+  if(sa!==null){const dh=Math.floor(sa/3600),dm=Math.floor((sa%3600)/60),ds=sa%60;durStr2=String(dh).padStart(2,'0')+':'+String(dm).padStart(2,'0')+':'+String(ds).padStart(2,'0');}
+  const vencida=sa!==null&&sa>prazo;
+  const fatStr=fmtRest(rest);
+  let dStr=durStr2;
+  if(vencida&&fatStr)dStr+=' (fora do prazo — '+fatStr+')';
+  else if(!vencida&&fatStr)dStr+=' (faltam '+fatStr+' para vencer)';
+  dStr+=farolChar(hDec);
+
+  function addSec(txt){const d=document.createElement('div');d.className='msg-section';d.textContent=txt;msgEl.appendChild(d);}
+  function addRow(key,val){if(!val)return;const d=document.createElement('div');d.className='msg-line';d.innerHTML='<span class="msg-key">'+key+'</span> <span class="msg-val">'+val+'</span>';msgEl.appendChild(d);}
+  function addEmpty(){const d=document.createElement('div');d.className='msg-empty';msgEl.appendChild(d);}
+
+  addSec('DADOS SERVIÇO');
+  addRow('Nº INCIDÊNCIA:',u(item.Num_Incidencia));
+  addRow('ENDEREÇO:',u(item.Endereco));
+  if(item.Circuito)addRow('CIRCUITO:',u(item.Circuito));
+  if(item.Ponto_Eletrico)addRow('PONTO ELÉTRICO:',u(item.Ponto_Eletrico));
+  addRow('CLIENTE:',u(item.Cliente));
+  addRow('MEDIDOR:',u(item.Medidor));
+  if(item.Telefone_1)addRow('TELEFONE 1:',u(item.Telefone_1));
+  if(item.Telefone_2)addRow('TELEFONE 2:',u(item.Telefone_2));
+  addRow('TIPO RECLAMAÇÃO:',tipoFinal);
+  if(item.Clientes)addRow('CLIENTES AFETADOS:',u(item.Clientes));
+  // Linha de duração com id para atualização em tempo real
+  if(dStr){const d=document.createElement('div');d.className='msg-line';d.innerHTML='<span class="msg-key">DURAÇÃO:</span> <span class="msg-val" id="pv-msg-dur">'+dStr+'</span>';msgEl.appendChild(d);}
+  if(item.Total_Avisos)addRow('TOTAL AVISOS:',u(item.Total_Avisos));
+  if(item.Tipo_de_Rede)addRow('TIPO DE REDE:',u(item.Tipo_de_Rede));
+  if(item.Nivel_Tensao)addRow('NÍVEL TENSÃO:',u(item.Nivel_Tensao));
+  if(item.Ponto_de_Referencia)addRow('REFERÊNCIA:',u(item.Ponto_de_Referencia));
+  if(item.Observacao_Cliente)addRow('OBS. CLIENTE:',item.Observacao_Cliente.trim().toUpperCase());
+  if(lD||lC){addEmpty();addSec('DADOS GPS');if(lD)addRow('GPS DISPOSITIVO:',lD);if(lC)addRow('GPS CLIENTE:',lC);}
+  addEmpty();addSec('DETALHES');
+  addRow('Nº CLIENTE:',u(item.Num_Cliente));
+  addRow('ÁREA DE DESPACHO:',u(item.Area_Despacho));
+  if(item.Estado)addRow('ESTADO:',u(item.Estado));
+  if(item.Viatura)addRow('VIATURA:',u(item.Viatura));
+  if(item.Comentario)addRow('COMENTÁRIOS/OBS:',item.Comentario.trim().toUpperCase());
+}
+
+function fecharPreview(){
+  document.getElementById('pvCard').style.display='none';
+  _pvOpen=false;_pvBtn=null;
+}
+
+function copPreview(){
+  const txt=mkMsg(window._pvItem||{});
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn=document.getElementById('pvCopBtn');
+    btn.textContent='✅ COPIADO!';btn.className='ok';
+    setTimeout(()=>{btn.textContent='📋 COPIAR MENSAGEM';btn.className='';},2000);
+  });
+}
+function mkMsg(item){
+  const ts=parseInt(localStorage.getItem(SKT)||'0');const dec=ts?Math.floor((Date.now()-ts)/1000):0;
+  function cl(c){if(!c)return null;const p=String(c).split(',');return p.length>=2?'https://www.google.com/maps?q='+p[0].trim()+','+p[1].trim():null;}
+  const sb=pSeg(item.Duracao);const sa=sb!==null?sb+dec:null;
+  let durAtual=item.Duracao||'-';
+  if(sa!==null){const dh=Math.floor(sa/3600),dm=Math.floor((sa%3600)/60),ds=sa%60;durAtual=String(dh).padStart(2,'0')+':'+String(dm).padStart(2,'0')+':'+String(ds).padStart(2,'0');}
+  const prazo=24*3600,vencida=sa!==null&&sa>prazo,rest=sa!==null?prazo-sa:null;
+  const fatStr=fmtRest(rest);
+  const totalAv=parseInt(item.Total_Avisos)||0;
+  const tipoOrig=(item.Tipo_Reclamacao||'').toUpperCase().trim();
+  const tipoFinal=totalAv>1&&tipoOrig==='FALTA DE ENERGIA NO CONSUMIDOR'?'FALTA DE ENERGIA EM VÁRIOS CONSUMIDORES':tipoOrig;
+  const lD=cl(item.Coordenada_Dispositivo),lC=cl(item.Coordenada_Cliente);
+  const L=[];
+  L.push('---- *DADOS SERVIÇO* ----');
+  L.push('*Nº INCIDÊNCIA:* '+u(item.Num_Incidencia));
+  L.push('*ENDEREÇO:* '+u(item.Endereco));
+  if(item.Circuito)L.push('*CIRCUITO:* '+u(item.Circuito));
+  if(item.Ponto_Eletrico)L.push('*PONTO ELÉTRICO:* '+u(item.Ponto_Eletrico));
+  L.push('*CLIENTE:* '+u(item.Cliente));
+  L.push('*MEDIDOR:* '+u(item.Medidor));
+  if(item.Telefone_1)L.push('*TELEFONE 1:* '+u(item.Telefone_1));
+  if(item.Telefone_2)L.push('*TELEFONE 2:* '+u(item.Telefone_2));
+  L.push('*TIPO RECLAMAÇÃO:* '+tipoFinal);
+  if(item.Clientes)L.push('*CLIENTES AFETADOS:* '+u(item.Clientes));
+  let dStr=durAtual;
+  if(vencida&&fatStr)dStr+=' (fora do prazo — '+fatStr+')';
+  else if(!vencida&&fatStr)dStr+=' (faltam '+fatStr+' para vencer)';
+  dStr+=farolChar(sa!==null?sa/3600:null);
+  L.push('*DURAÇÃO:* '+dStr);
+  if(item.Total_Avisos)L.push('*TOTAL AVISOS:* '+u(item.Total_Avisos));
+  if(item.Tipo_de_Rede)L.push('*TIPO DE REDE:* '+u(item.Tipo_de_Rede));
+  if(item.Nivel_Tensao)L.push('*NÍVEL TENSÃO:* '+u(item.Nivel_Tensao));
+  if(item.Ponto_de_Referencia)L.push('*REFERÊNCIA:* '+u(item.Ponto_de_Referencia));
+  if(item.Observacao_Cliente)L.push('*OBS. CLIENTE:*\n'+item.Observacao_Cliente.trim().toUpperCase());
+  if(lD||lC){L.push('');L.push('---- *DADOS GPS* ----');if(lD){L.push('*📍 GPS DISPOSITIVO:* '+lD);L.push('');}if(lC)L.push('*👤 GPS CLIENTE:* '+lC);}
+  L.push('');L.push('---- *DETALHES* ----');
+  L.push('*Nº CLIENTE:* '+u(item.Num_Cliente));
+  L.push('*ÁREA DE DESPACHO:* '+u(item.Area_Despacho));
+  if(item.Estado)L.push('*ESTADO:* '+u(item.Estado));
+  if(item.Viatura)L.push('*VIATURA:* '+u(item.Viatura));
+  if(item.Comentario)L.push('*COMENTÁRIOS/OBS:*\n'+item.Comentario.trim().toUpperCase());
+  return L.join('\n');
+}
+</script>
+
+<div class="ro" id="autoRotO" onclick="fAutoRota(event)">
+  <div class="rb" onclick="event.stopPropagation()">
+    <h2>🧭 AUTO ROTEIRIZAÇÃO</h2>
+    <div class="rav" style="margin-bottom:12px;">
+      ℹ️ Selecione <b>1 item</b> na tabela como ponto de partida.<br>
+      O sistema analisará até <b>50 itens</b> filtrados e montará a rota pelos mais próximos.
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 0;border-bottom:1px solid var(--bd);">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;">Nº de paradas na rota:</span>
+      <input type="number" id="autoRotQtd" min="3" max="10" value="3"
+        style="width:60px;border:1.5px solid var(--bd);border-radius:6px;padding:4px 8px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--az);text-align:center;outline:none;">
+      <span style="font-family:'Barlow Condensed',sans-serif;font-size:12px;color:var(--mu);">(mín. 3 · máx. 10)</span>
+    </div>
+    <div class="rav" id="autoRotInfo" style="display:none;"></div>
+    <div id="autoRotItens"></div>
+    <div class="rbt">
+      <button class="rfc" onclick="fAutoRota()">CANCELAR</button>
+      <button class="rok" id="btnConfAutoRota" onclick="confAutoRota()">✓ CALCULAR ROTA</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="aviso-overlay" id="avisoO" onclick="this.classList.remove('ab')">
+  <div class="aviso-box" onclick="event.stopPropagation()">
+    <div class="aviso-ico" id="avisoIco">⚠️</div>
+    <p id="avisoMsg"></p>
+    <button onclick="document.getElementById('avisoO').classList.remove('ab')">OK</button>
+  </div>
+</div>
+
+</body>
+</html>

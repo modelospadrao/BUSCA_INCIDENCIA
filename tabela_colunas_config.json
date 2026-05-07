@@ -1,0 +1,134 @@
+[
+  {
+    "id": "are",
+    "lb": "ÁREA",
+    "v": true,
+    "w": 135
+  },
+  {
+    "id": "rot",
+    "lb": "ROTA",
+    "v": true,
+    "w": 55
+  },
+  {
+    "id": "avi",
+    "lb": "AVISOS",
+    "v": true,
+    "w": 61
+  },
+  {
+    "id": "inc",
+    "lb": "Nº INCIDÊNCIA",
+    "v": true,
+    "w": 110
+  },
+  {
+    "id": "gps",
+    "lb": "GPS",
+    "v": true,
+    "w": 62
+  },
+  {
+    "id": "end",
+    "lb": "ENDEREÇO",
+    "v": true,
+    "w": 193
+  },
+  {
+    "id": "pel",
+    "lb": "PONTO ELÉTRICO",
+    "v": true,
+    "w": 113
+  },
+  {
+    "id": "med",
+    "lb": "MEDIDOR",
+    "v": true,
+    "w": 75
+  },
+  {
+    "id": "nom",
+    "lb": "NOME CLIENTE",
+    "v": false,
+    "w": 180
+  },
+  {
+    "id": "tel",
+    "lb": "TELEFONE 1",
+    "v": false,
+    "w": 148
+  },
+  {
+    "id": "tel2",
+    "lb": "TELEFONE 2",
+    "v": false,
+    "w": 148
+  },
+  {
+    "id": "cli",
+    "lb": "Nº CLIENTE",
+    "v": true,
+    "w": 102
+  },
+  {
+    "id": "tip",
+    "lb": "TIPO",
+    "v": true,
+    "w": 154
+  },
+  {
+    "id": "dur",
+    "lb": "DURAÇÃO",
+    "v": true,
+    "w": 108
+  },
+  {
+    "id": "via",
+    "lb": "VIATURA",
+    "v": true,
+    "w": 138
+  },
+  {
+    "id": "cir",
+    "lb": "CIRCUITO",
+    "v": true,
+    "w": 102
+  },
+  {
+    "id": "est",
+    "lb": "ESTADO",
+    "v": false,
+    "w": 120
+  },
+  {
+    "id": "niv",
+    "lb": "NÍVEL TENSÃO",
+    "v": false,
+    "w": 103
+  },
+  {
+    "id": "ref",
+    "lb": "REFERÊNCIA",
+    "v": false,
+    "w": 162
+  },
+  {
+    "id": "csh",
+    "lb": "CONSH",
+    "v": false,
+    "w": 100
+  },
+  {
+    "id": "obc",
+    "lb": "OBS. CLIENTE",
+    "v": true,
+    "w": 95
+  },
+  {
+    "id": "obs",
+    "lb": "OBSERVAÇÃO",
+    "v": true,
+    "w": 89
+  }
+]

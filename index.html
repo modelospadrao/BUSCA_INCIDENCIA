@@ -1,0 +1,2558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BUSCADOR DE INCIDÊNCIAS v3.6</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
+
+  :root {
+    --azul:        #004c97;
+    --azul-claro:  #0076d6;
+    --vermelho:    #d32f2f;
+    --verde:       #2e7d32;
+    --amarelo:     #f9a825;
+    --cinza-bg:    #eef1f5;
+    --cinza-card:  #ffffff;
+    --cinza-borda: #ccd3dc;
+    --cinza-texto: #333a46;
+    --cinza-muted: #7a8499;
+    --shadow:      0 4px 18px rgba(0,76,151,0.10);
+    --radius:      12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100vh;
+    overflow: hidden;
+  }
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--cinza-bg);
+    color: var(--cinza-texto);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--azul); color: #fff;
+    padding: 14px 20px 10px;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 3px 11px rgba(0,0,0,0.25);
+    position: sticky; top: 0; z-index: 200;
+  }
+  .header-icon { font-size: 28px; line-height: 1; }
+  .header-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: 0.06em; line-height: 1; }
+  .header-sub   { font-size: 11px; font-weight: 500; opacity: 0.7; letter-spacing: 0.08em; margin-top: 2px; }
+  .header-badge { margin-left: auto; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; }
+  .header-cfg-btn {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px; color: #fff; padding: 6px 12px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
+    cursor: pointer; display: none; align-items: center; gap: 6px; transition: background 0.2s; margin-left: 8px;
+  }
+  .header-cfg-btn:hover { background: rgba(255,255,255,0.25); }
+  .header-cfg-btn.visivel { display: inline-flex; }
+
+  /* LAYOUT */
+  .main {
+    padding: 10px 16px 14px; /* 14px bottom evita barra de tarefas */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    height: calc(100dvh - 62px); /* dvh respeita barra de tarefas do SO */
+    overflow: hidden;
+  }
+
+  /* CARD BASE */
+  .card { background: var(--cinza-card); border-radius: var(--radius); border: 1px solid var(--cinza-borda); box-shadow: var(--shadow); overflow: hidden; }
+  .card-header { background: var(--azul); color: #fff; padding: 9px 14px; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+  .card-header .hl { font-size: 15px; }
+  .card-body { padding: 14px; }
+
+  /* DADOS */
+  .dados-header { background: #263238; color: #fff; padding: 9px 14px; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; border-radius: var(--radius) var(--radius) 0 0; }
+  .dados-header:hover { background: #37474f; }
+  .dados-toggle { margin-left: auto; font-size: 16px; transition: transform 0.25s; }
+  .dados-toggle.aberto { transform: rotate(180deg); }
+  .dados-body { display: none; padding: 12px 14px; background: #1a1d23; border-radius: 12px; border: 1px solid #37474f; position: absolute; top: calc(100% + 8px); left: 0; min-width: 380px; z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
+  .dados-body.aberto { display: block; }
+  .dados-api-compacto { position: relative; }
+  .instrucao { font-size: 11px; color: #90a4ae; margin-bottom: 8px; letter-spacing: 0.06em; line-height: 1.5; }
+  .instrucao a { color: #64b5f6; text-decoration: none; }
+  textarea.dados-input { width: 100%; height: 90px; background: #263238; border: 1px solid #455a64; border-radius: 8px; color: #e0f7fa; font-family: 'Courier New', monospace; font-size: 11.5px; padding: 10px; resize: vertical; outline: none; transition: border-color 0.2s; text-transform: none; }
+  textarea.dados-input:focus { border-color: #0076d6; }
+  textarea.dados-input::placeholder { color: #546e7a; }
+  .btn-dados-row { margin-top: 8px; display: flex; gap: 8px; }
+  .btn-carregar { flex: 1; padding: 10px; background: #004c97; color: #fff; border: none; border-radius: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; transition: background 0.2s; }
+  .btn-carregar:hover:not(:disabled) { background: #0076d6; }
+  .btn-carregar:disabled { background: #37474f; color: #78909c; cursor: not-allowed; opacity: 0.7; }
+  .btn-apagar { flex: 1; padding: 10px; background: #c62828; color: #fff; border: none; border-radius: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; transition: background 0.2s; display: none; }
+  .btn-apagar:hover { background: #e53935; }
+  .status-dados { margin-top: 7px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-align: center; padding: 5px 10px; border-radius: 6px; display: none; }
+  .status-dados.ok  { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; display: block; }
+  .status-dados.err { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; display: block; }
+  .dados-cache-badge { font-size: 10px; color: #4fc3f7; letter-spacing: 0.07em; margin-bottom: 6px; display: none; background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.25); border-radius: 5px; padding: 4px 8px; }
+  .dados-cache-badge.visivel { display: block; }
+
+  /* BUSCA */
+  .busca-row { display: grid; grid-template-columns: 110px 110px 110px 322px 424px 120px 272px 160px 100px; gap: 10px; align-items: end; }
+  .campo-wrap { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+  .campo-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; height: 14px; min-width: 0; }
+  .campo-label { font-size: 10px; font-weight: 700; color: var(--cinza-muted); letter-spacing: 0.1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
+  input.busca-input { width: 100%; min-width: 0; box-sizing: border-box; padding: 11px 14px; border: 2px solid var(--cinza-borda); border-radius: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 700; color: var(--azul); background: #f4f7fb; outline: none; letter-spacing: 0.05em; text-transform: uppercase; transition: border-color 0.2s, box-shadow 0.2s; }
+  .campo-clear { background: none; border: none; cursor: pointer; font-size: 11px; color: var(--cinza-muted); padding: 0; line-height: 1; font-weight: 700; letter-spacing: 0; opacity: 0; pointer-events: none; flex-shrink: 0; }
+  .campo-clear:hover { color: var(--vermelho); }
+  .campo-clear.visivel { opacity: 1; pointer-events: all; }
+  input.busca-input:focus { border-color: var(--azul-claro); box-shadow: 0 0 0 3px rgba(0,118,214,0.13); background: #fff; }
+  input.busca-input::placeholder { color: #b0bec5; font-weight: 400; font-size: 14px; }
+  .btn-buscar { padding: 12px 32px; background: var(--azul); color: #fff; border: none; border-radius: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 0.12em; cursor: pointer; box-shadow: 0 4px 0 #00316b; transition: background 0.2s, transform 0.1s; white-space: nowrap; }
+  .btn-buscar:hover { background: #0076d6; }
+  .btn-buscar:active { transform: translateY(3px); box-shadow: 0 1px 0 #00316b; }
+  .btn-cfg-busca { padding: 12px 18px; background: rgba(0,76,151,0.08); color: var(--azul); border: 2px solid var(--cinza-borda); border-radius: 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .btn-cfg-busca:hover { background: var(--azul); color: #fff; border-color: var(--azul); }
+
+  /* LAYOUT BUSCA + MINI CARD LADO A LADO — altura fixa, nunca cresce */
+  /* FAIXA TOPO: DADOS API + ÁREAS ATIVAS */
+  .faixa-topo-linha1 { display: flex; gap: 10px; align-items: stretch; flex-shrink: 0; }
+  .dados-api-compacto { background: #1a1d23; border-radius: var(--radius); flex-shrink: 0; overflow: visible; }
+  .dados-api-compacto .dados-header { border-radius: var(--radius); }
+
+  /* ÁREAS ATIVAS — faixa horizontal */
+  .areas-ativas-faixa { flex: 1; min-width: 0; background: #1a1d23; border-radius: var(--radius); display: flex; align-items: center; gap: 0; overflow: hidden; padding: 0 6px; }
+  .areas-ativas-faixa-label { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; color: #546e7a; letter-spacing: 0.12em; padding: 0 10px 0 6px; white-space: nowrap; flex-shrink: 0; }
+  .areas-ativas-faixa-chips { display: flex; gap: 6px; overflow: hidden; flex: 1; align-items: center; }
+  .areas-ativas-faixa-vazia { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: #546e7a; letter-spacing: 0.06em; }
+  .area-chip-faixa { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 4px 8px; white-space: nowrap; flex-shrink: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; color: #fff; letter-spacing: 0.04em; }
+  .area-chip-faixa-qtd { color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 700; }
+  .area-chip-faixa-x { width: 16px; height: 16px; background: var(--vermelho); color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; cursor: pointer; flex-shrink: 0; line-height: 1; }
+  .area-chip-faixa-x:hover { background: #b71c1c; }
+  .areas-ativas-nav { display: flex; gap: 3px; padding: 0 4px; flex-shrink: 0; }
+  .areas-ativas-nav-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: #fff; font-size: 11px; font-weight: 700; padding: 3px 7px; cursor: pointer; transition: background 0.15s; }
+  .areas-ativas-nav-btn:hover { background: rgba(255,255,255,0.22); }
+  .areas-ativas-nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+  /* MINI CARD ÁREAS ATIVAS — altura fixa igual ao card de busca */
+  .areas-ativas-card { display: none; background: #fff; border: 1.5px solid var(--cinza-borda); border-radius: var(--radius); box-shadow: var(--shadow); padding: 10px 14px; min-width: 200px; max-width: 280px; box-sizing: border-box; flex-direction: column; height: 122px; overflow: hidden; }
+  .areas-ativas-card.visivel { display: flex; }
+  .areas-ativas-titulo { font-size: 9px; font-weight: 700; color: var(--cinza-muted); letter-spacing: 0.12em; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .areas-ativas-titulo::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--azul); flex-shrink: 0; }
+  .areas-ativas-titulo-total { margin-left: auto; background: var(--azul); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 800; padding: 0px 7px; border-radius: 10px; letter-spacing: 0.04em; display: none; }
+  .areas-ativas-titulo-total.visivel { display: inline-block; }
+  .areas-ativas-lista { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; min-height: 0; }
+  .areas-ativas-item { display: flex; align-items: center; justify-content: space-between; background: #e8f0fb; border-radius: 6px; padding: 4px 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; color: var(--azul); letter-spacing: 0.04em; gap: 6px; flex-shrink: 0; }
+  .areas-ativas-item-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .areas-ativas-item-qtd { background: var(--azul); color: #fff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 10px; flex-shrink: 0; }
+  .areas-ativas-item-x { cursor: pointer; font-size: 13px; color: var(--azul); opacity: 0.5; flex-shrink: 0; line-height: 1; margin-left: 2px; }
+  .areas-ativas-item-x:hover { opacity: 1; color: var(--vermelho); }
+  .areas-ativas-vazia { font-size: 11px; color: var(--cinza-muted); letter-spacing: 0.04em; }
+  .areas-ativas-total { display: none; }
+  .area-filtro-wrap { position: relative; }
+  .area-filtro-label { font-size: 10px; font-weight: 700; color: var(--cinza-muted); letter-spacing: 0.1em; margin-bottom: 5px; }
+  .area-filtro-box { display: flex; align-items: center; flex-wrap: nowrap; gap: 4px; height: 44px; padding: 4px 8px; border: 2px solid var(--cinza-borda); border-radius: 8px; background: #f4f7fb; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; user-select: none; overflow: hidden; min-width: 0; width: 100%; }
+  .area-chip { display: inline-flex; align-items: center; gap: 3px; background: var(--azul); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; padding: 2px 6px 2px 7px; border-radius: 20px; white-space: nowrap; min-width: 0; overflow: hidden; flex-shrink: 1; max-width: 90px; }
+  .area-filtro-placeholder { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; color: #b0bec5; font-weight: 400; letter-spacing: 0.04em; flex: 1; }
+  .area-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--azul); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 8px 2px 10px; border-radius: 20px; white-space: nowrap; }
+  .area-chip-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .area-chip-x { cursor: pointer; font-size: 12px; line-height: 1; opacity: 0.8; flex-shrink: 0; }
+  .area-chip-x:hover { opacity: 1; }
+  .area-filtro-box:hover { border-color: var(--azul-claro); }
+  .area-filtro-box.aberta { border-color: var(--azul-claro); box-shadow: 0 0 0 3px rgba(0,118,214,0.13); background: #fff; }
+  .area-chip-extra { display: inline-flex; align-items: center; background: #546e7a; color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .area-filtro-arrow.aberta { transform: rotate(180deg); }
+  .area-dropdown { display: none; position: fixed; background: #fff; border: 2px solid var(--azul-claro); border-radius: 10px; box-shadow: 0 6px 24px rgba(0,76,151,0.22); z-index: 9999; max-height: 420px; overflow-y: auto; min-width: 260px; }
+  .area-dropdown.aberta { display: block; }
+  .area-dropdown-search { padding: 8px 10px; border-bottom: 1px solid var(--cinza-borda); position: sticky; top: 0; background: #fff; z-index: 2; }
+  .area-dropdown-search input { width: 100%; padding: 6px 10px; border: 1.5px solid var(--cinza-borda); border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; color: var(--azul); background: #f4f7fb; outline: none; text-transform: uppercase; }
+  .area-dropdown-search input:focus { border-color: var(--azul-claro); }
+  .area-option { display: flex; align-items: center; gap: 10px; padding: 9px 14px; cursor: pointer; transition: background 0.12s; font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; color: var(--cinza-texto); letter-spacing: 0.04em; border-bottom: 1px solid #f0f3f7; }
+  .area-option:last-child { border-bottom: none; }
+  .area-option:hover { background: #f0f7ff; color: var(--azul); }
+  .area-option.selecionada { background: #e8f0fb; color: var(--azul); }
+  .area-option input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--azul); cursor: pointer; flex-shrink: 0; }
+  .area-option-qtd { margin-left: auto; font-size: 11px; color: #fff; font-weight: 800; background: var(--vermelho); padding: 1px 7px; border-radius: 10px; flex-shrink: 0; }
+  .area-sel-btns { display: flex; gap: 6px; padding: 7px 10px; border-bottom: 1px solid var(--cinza-borda); position: sticky; top: 47px; background: #fff; z-index: 2; }
+  .area-sel-btn { flex: 1; padding: 5px 8px; border: none; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; cursor: pointer; transition: background 0.15s; }
+  .area-sel-btn.todas { background: var(--azul); color: #fff; }
+  .area-sel-btn.todas:hover { background: var(--azul-claro); }
+  .area-sel-btn.nenhuma { background: #f4f7fb; color: var(--vermelho); border: 1.5px solid #ef9a9a; }
+  .area-sel-btn.nenhuma:hover { background: #ffebee; }
+  .relogio-wrap { display: none; align-items: center; gap: 14px; background: #263238; border-radius: 16px; padding: 7px 19px; width: 153px; box-sizing: border-box; overflow: hidden; }
+  .relogio-wrap.visivel { display: flex; }
+  .relogio-label { font-size: 8px; font-weight: 700; color: #78909c; letter-spacing: 0.06em; white-space: nowrap; }
+  .relogio-tempo { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: #4fc3f7; letter-spacing: 0.04em; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .relogio-dot { width: 7px; height: 7px; border-radius: 50%; background: #4fc3f7; animation: pisca 1s infinite; flex-shrink: 0; }
+
+  /* LISTA */
+  .resultado-lista { display: flex; flex-direction: column; gap: 10px; }
+  .resultado-item { background: #fff; border: 2px solid var(--cinza-borda); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: all 0.2s; }
+  .resultado-item:hover { border-color: var(--azul-claro); box-shadow: 0 4px 16px rgba(0,118,214,0.14); background: #f0f7ff; }
+  .resultado-item.selecionado { border-color: var(--azul); background: #e8f0fb; box-shadow: 0 4px 16px rgba(0,76,151,0.18); }
+  .res-inc { font-family: 'Barlow Condensed', sans-serif; font-size: 19px; font-weight: 800; color: var(--azul); letter-spacing: 0.04em; }
+  .res-cliente { font-size: 13px; font-weight: 600; color: var(--cinza-texto); margin-top: 2px; }
+  .res-tipo { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-top: 4px; letter-spacing: 0.07em; }
+  .res-tipo.bt       { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+  .res-tipo.mt       { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+  .res-tipo.nova     { background: #e8f5e9; color: #2e7d32; }
+  .res-tipo.recebida { background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
+  .res-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; align-items: center; }
+
+  /* ── WORKSPACE 3 COLUNAS: LISTA | DETALHE | PRÉVIA ── */
+  .layout-principal { display: contents; } /* transparente, não cria container */
+  .conteudo-direito { display: contents; } /* transparente */
+
+  /* faixa superior: dados + busca ocupam 100% */
+  .faixa-topo { display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; }
+
+  /* faixa inferior: 3 colunas */
+  .workspace {
+    display: grid;
+    grid-template-columns: 556px 1fr 420px;
+    gap: 10px;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+  }
+  /* sidebar lista — máx ~5 itens visíveis, scroll no restante */
+  .sidebar-lista {
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius);
+    border: 1px solid var(--cinza-borda);
+    box-shadow: var(--shadow);
+    background: var(--cinza-card);
+    overflow: hidden;
+  }
+  .sidebar-lista-header {
+    background: var(--azul); color: #fff;
+    padding: 8px 8px 19px;
+    box-sizing: border-box;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.1em;
+    display: flex; align-items: flex-start; gap: 8px; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .sort-btn { background: #fff; border: 1px solid rgba(0,0,0,0.15); border-radius: 5px; color: #1a1d23; font-size: 15px; font-weight: 800; padding: 0; width: 55px; height: 39px; cursor: pointer; transition: all 0.15s; box-shadow: 0 2px 4px rgba(0,0,0,0.35); white-space: nowrap; position: relative; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; }
+  .sort-btns { display: flex; gap: 4px; margin-left: 0; align-items: flex-start; margin-top: -4px; }
+  .sort-btn:hover { background: #f0f4f8; }
+  .sort-btn .sort-sub { display: block; line-height: 1; letter-spacing: 0.14em; position: absolute; bottom: -17px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-weight: 640; color: #fff; }
+  .sort-btn .sort-sub .s1 { font-size: 14px; }
+  .sort-btn .sort-sub .s2 { font-size: 10px; }
+  .sort-btn.ativo .sort-sub { color: #fff; }
+  .sort-btn.ativo { color: #e53935; }
+  #btnLimparOrdem { background: #c62828 !important; color: #fff !important; border-radius: 50%; width: 50px; height: 33px; border-color: #b71c1c !important; box-shadow: 0 2px 4px rgba(0,0,0,0.35) !important; font-size: 13px !important; width: auto !important; padding: 0 10px !important; }
+  #btnLimparOrdem:hover { background: #b71c1c !important; }
+  #btnFiltroVital.ativo { color: #e53935; }
+  .sidebar-lista-scroll {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    padding: 7px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  /* col detalhe */
+  .col-detalhe {
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--cinza-borda);
+    box-shadow: var(--shadow);
+  }
+  .col-detalhe-scroll { overflow-y: overlay; flex: 1; min-height: 0; }
+  .col-detalhe-vazio {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 300px; color: #546e7a; font-size: 12px; letter-spacing: 0.07em;
+    background: #f4f7fb; gap: 10px;
+  }
+  .col-detalhe-vazio .ei { font-size: 40px; opacity: 0.35; }
+  /* col prévia — precisa ser flex para repassar altura ao painel-direito */
+  .col-previa {
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .resultado-item { background: #fff; border: 1px solid var(--cinza-borda); border-radius: 10px; padding: 4px 12px 26px; cursor: pointer; transition: all 0.2s; position: relative; min-height: 85px; max-height: 85px; overflow: hidden; }
+  .resultado-item:hover { border-color: var(--azul-claro); box-shadow: 0 4px 16px rgba(0,118,214,0.14); background: #f0f7ff; }
+  .resultado-item.selecionado { border-color: var(--azul); background: #e8f0fb; box-shadow: 0 4px 16px rgba(0,76,151,0.18); }
+  .res-viatura { position: absolute; bottom: 5px; right: 8px; display: flex; align-items: center; gap: 5px; font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 800; color: var(--azul); letter-spacing: 0.04em; white-space: nowrap; line-height: 1; }
+  .res-viatura-icon { font-size: 16px; line-height: 1; }
+  .res-inc { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 800; color: var(--azul); letter-spacing: 0.04em; display: flex; align-items: center; gap: 5px; overflow: hidden; line-height: 1; flex: 1; min-width: 0; }
+  .res-icon-vital { height: 18px; width: 18px; object-fit: contain; display: inline-block; vertical-align: middle; margin-left: 4px; flex-shrink: 0; }
+  .res-icon-viatura { height: 18px; width: 18px; object-fit: contain; flex-shrink: 0; display: block; }
+  .res-linha-topo { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+  .res-linha-end { display: flex; align-items: center; gap: 6px; margin-top: 5px; min-height: 14px; }
+  .res-linha-badges { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .res-endereco { font-size: 12px; font-weight: 600; color: #263238; display: flex; gap: 3px; align-items: center; line-height: 1.2; flex: 1; min-width: 0; }
+  .res-endereco-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .res-tipo-rec { font-size: 10px; color: #90a4ae; white-space: nowrap; flex-shrink: 0; text-align: right; max-width: 45%; overflow: hidden; text-overflow: ellipsis; }
+  .res-tipo.circuito { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+  .res-cliente { font-size: 11px; font-weight: 600; color: var(--cinza-texto); margin-top: 1px; }
+  .res-tipo { display: inline-block; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 20px; letter-spacing: 0.1em; }
+  .res-tipo.bt       { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+  .res-tipo.mt       { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+  .res-tipo.nova     { background: #e8f5e9; color: #2e7d32; }
+  .res-tipo.recebida { background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
+
+  /* BADGE TEMPO NA LISTA */
+  .res-tempo { display: inline-flex; align-items: center; gap: 4px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: auto; flex-shrink: 0; }
+  .res-tempo.verde    { background: #e8f5e9; color: #2e7d32; }
+  .res-tempo.amarelo  { background: #fff8e1; color: #e65100; }
+  .res-tempo.vencido  { background: #ffebee; color: #c62828; font-weight: 900; }
+  .detalhe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+  .detalhe-campo { display: flex; flex-direction: column; gap: 0px; }
+  .detalhe-campo.full { grid-column: 1 / -1; }
+  .dc-label { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: var(--cinza-muted); }
+  .dc-value { font-size: 13px; font-weight: 600; color: var(--cinza-texto); word-break: break-word; line-height: 1.35; }
+  .dc-value.destaque { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; color: var(--azul); letter-spacing: 0.04em; }
+  .dc-value.vermelho    { color: var(--vermelho) !important; }
+  .dc-value.amarelo-dur { color: var(--amarelo) !important; }
+  .dc-value.verde-dur   { color: var(--verde) !important; }
+
+  .dur-farol { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; font-size: 18px; flex-wrap: wrap; }
+  .faltam-live { display: inline-flex; align-items: center; gap: 4px; background: var(--vermelho); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 0.06em; padding: 2px 9px; border-radius: 20px; margin-left: 4px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .faltam-live.amarelo-bg { background: var(--amarelo); color: #1a1a1a; }
+  .faltam-live.verde-bg   { background: var(--verde);   color: #fff; }
+  .faltam-live.vencido    { background: #4a0000; color: #ff5252; animation: pisca-red 0.7s infinite; }
+  .farol-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .farol-verde    { background: #2e7d32; }
+  .farol-amarelo  { background: var(--amarelo); animation: pisca 0.8s infinite; }
+  .farol-vermelho { background: var(--vermelho); animation: pisca 0.6s infinite; }
+  .avisos-alerta  { animation: pisca-red 0.7s infinite; color: var(--vermelho) !important; font-weight: 800; }
+
+  @keyframes pisca     { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  @keyframes pisca-red { 0%,100%{color:#d32f2f} 50%{color:#ff8a80} }
+
+  /* BARRA DE AÇÕES (fora da captura) */
+  .acoes-bar { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 14px; background: #f4f7fb; border-top: 1px solid var(--cinza-borda); flex-shrink: 0; }
+  .toggle-btn { flex: 1; min-width: 100px; padding: 7px 8px; border-radius: 8px; border: 2px solid var(--cinza-borda); background: #fff; color: var(--cinza-muted); font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.07em; cursor: pointer; transition: all 0.18s; user-select: none; text-align: center; }
+  .toggle-btn:hover { border-color: var(--azul-claro); color: var(--azul); }
+  .toggle-btn.ativo { background: var(--vermelho); border-color: var(--vermelho); color: #fff; }
+  .mapa-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--verde); color: #fff; border: none; border-radius: 8px; padding: 7px 10px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; text-decoration: none; transition: background 0.2s; }
+  .mapa-btn:hover { background: #1b5e20; }
+  .mapa-btn.cinza { background: #546e7a; }
+  .mapa-btn.cinza:hover { background: #263238; }
+
+  .btn-captura { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.35); border-radius: 6px; color: #fff; padding: 4px 10px; font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.07em; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: background 0.2s; }
+  .btn-captura:hover { background: rgba(255,255,255,0.35); }
+
+  /* PAINEL PRÉVIA (coluna direita) */
+  .painel-direito { border-radius: var(--radius); border: 1px solid var(--cinza-borda); box-shadow: var(--shadow); background: var(--cinza-card); overflow: hidden; display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
+  .painel-abas { display: flex; border-bottom: 2px solid var(--cinza-borda); flex-shrink: 0; }
+  .painel-conteudo { display: none; }
+  .painel-conteudo.ativo { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+  .preview-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+  .cfg-corpo { padding: 12px 14px; overflow-y: auto; flex: 1; min-height: 0; }
+
+  /* ABAS */
+  .painel-aba { flex: 1; padding: 10px 8px; text-align: center; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.07em; cursor: pointer; color: var(--cinza-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color 0.2s, border-color 0.2s; background: #f4f7fb; user-select: none; }
+  .painel-aba:hover { color: var(--azul); }
+  .painel-aba.ativa { color: var(--azul); border-bottom-color: var(--azul); background: #fff; }
+
+  /* ABA PRÉVIA */
+  .preview-acoes { display: flex; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--cinza-borda); background: #f4f7fb; flex-shrink: 0; }
+  .preview-acoes button { flex: 1; padding: 7px 10px; border: none; border-radius: 7px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; transition: background 0.18s; }
+  .btn-copiar-prev { background: var(--azul); color: #fff; }
+  .btn-copiar-prev:hover { background: var(--azul-claro); }
+  .btn-copiar-prev.copiado { background: var(--verde) !important; }
+  .btn-editar-prev { background: #fff; color: var(--cinza-texto); border: 1.5px solid var(--cinza-borda) !important; }
+  .btn-editar-prev:hover { border-color: var(--azul-claro) !important; color: var(--azul); }
+  .btn-editar-prev.editando { background: #fff3e0; color: #e65100; border-color: #e65100 !important; }
+
+  .preview-vazio { padding: 40px 20px; text-align: center; color: #546e7a; font-size: 12px; letter-spacing: 0.06em; line-height: 1.8; background: #1a1d23; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+  .preview-vazio .pv-icon { font-size: 32px; opacity: 0.4; }
+
+  div.preview-txt { width: 100%; min-height: 300px; background: #1a1d23; border: none; color: #e0f7fa; font-family: 'Barlow', sans-serif; font-size: 12px; padding: 14px; box-sizing: border-box; text-transform: none; letter-spacing: 0.01em; line-height: 1.7; display: block; white-space: pre-wrap; word-break: break-word; user-select: text; cursor: default; }
+
+  /* EDITOR ESTRUTURADO */
+  .editor-struct { display: none; flex-direction: column; background: #1a1d23; padding: 10px 12px; gap: 5px; }
+  .editor-struct.ativo { display: flex; }
+  .editor-row { display: flex; flex-direction: column; gap: 2px; }
+  .editor-titulo { font-family: 'Barlow Condensed', sans-serif; font-size: 10px; font-weight: 700; color: #64b5f6; letter-spacing: 0.1em; padding: 0 2px; user-select: none; pointer-events: none; }
+  .editor-titulo.bloco { color: #80cbc4; font-size: 11px; margin-top: 6px; }
+  .editor-valor { background: #263238; border: 1px solid #37474f; border-radius: 5px; color: #e0f7fa; font-family: 'Barlow', sans-serif; font-size: 12px; padding: 5px 8px; outline: none; text-transform: uppercase; letter-spacing: 0.01em; width: 100%; resize: none; overflow: hidden; line-height: 1.5; transition: border-color 0.18s; display: block; box-sizing: border-box; min-height: 28px; word-break: break-word; white-space: pre-wrap; }
+  .editor-valor:focus { border-color: #0076d6; }
+  .editor-separador { border: none; border-top: 1px solid #263238; margin: 3px 0; }
+
+  /* ABA CONFIGURAÇÕES */
+  .cfg-section-title { font-size: 10px; font-weight: 700; color: var(--cinza-muted); letter-spacing: 0.12em; margin: 12px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--cinza-borda); }
+  .cfg-section-title:first-child { margin-top: 0; }
+  .cfg-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 7px; cursor: pointer; transition: background 0.15s; margin-bottom: 2px; user-select: none; }
+  .cfg-item:hover { background: #f0f4fa; }
+  .cfg-item input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--azul); cursor: pointer; flex-shrink: 0; }
+  .cfg-item-label { font-size: 12px; font-weight: 600; color: var(--cinza-texto); letter-spacing: 0.04em; flex: 1; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: #2e7d32; color: #fff; padding: 11px 24px; border-radius: 30px; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.1em; box-shadow: 0 6px 24px rgba(0,0,0,0.3); transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.35s; opacity: 0; z-index: 99999; pointer-events: none; }
+  .toast.visivel { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  /* EMPTY */
+  .empty-state { text-align: center; padding: 30px 20px; color: var(--cinza-muted); }
+  .empty-state .ei { font-size: 38px; }
+  .empty-state p { font-size: 12px; margin-top: 8px; letter-spacing: 0.07em; }
+
+  /* RESPONSIVE */
+  @media(max-width: 1200px) {
+    .workspace { grid-template-columns: 220px 1fr 340px; }
+  }
+  @media(max-width: 900px) {
+    .workspace { grid-template-columns: 1fr; }
+    .sidebar-lista, .col-detalhe, .col-previa, .painel-direito { position: static; max-height: none; }
+    .sidebar-lista { max-height: 320px; }
+    .preview-scroll, .cfg-corpo { max-height: 400px; }
+    .busca-row { grid-template-columns: 1fr 1fr 1fr; }
+    .busca-row .btn-buscar-inline { grid-column: 1 / -1; }
+    #areaFiltroWrap { grid-column: 1 / -1; }
+  }
+  @media(max-width: 520px) {
+    .busca-row { grid-template-columns: 1fr; }
+    .detalhe-grid { grid-template-columns: 1fr; }
+    .detalhe-campo.full { grid-column: unset; }
+    .header-title { font-size: 18px; }
+  }
+  /* ── LOGIN & LGPD ── */
+  #lgpd-overlay, #login-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.92); z-index: 99998;
+    display: none; justify-content: center; align-items: center;
+  }
+  /* LGPD popup */
+  #lgpd-popup {
+    background: rgba(20,20,20,0.97); color: #fff;
+    border-radius: 16px; z-index: 99999;
+    max-width: 420px; width: 92%; max-height: 88vh;
+    overflow: hidden; box-shadow: 0 0 24px rgba(0,0,0,0.7);
+    display: flex; flex-direction: column;
+  }
+  #lgpd-popup .lgpd-header { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+  #lgpd-popup .lgpd-btn { background: var(--azul); color: #fff; font-weight: 800; width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.08em; transition: background 0.2s; }
+  #lgpd-popup .lgpd-btn:hover { background: var(--azul-claro); }
+  #lgpd-popup .lgpd-body { overflow-y: auto; padding: 14px 16px; flex: 1; }
+  #lgpd-popup .lgpd-nota { border: 1px solid rgba(255,255,255,0.18); border-radius: 6px; padding: 12px; font-size: 11px; color: #ccc; text-align: left; line-height: 1.8; margin-bottom: 10px; background: rgba(255,255,255,0.04); }
+  #lgpd-popup .lgpd-nota strong { color: #fff; }
+  /* LOGIN popup */
+  #login-popup {
+    background: #fff; padding: 30px 36px; border-radius: 16px;
+    text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    max-width: 320px; width: 92%;
+  }
+  #login-popup h2 { margin: 0 0 4px; color: var(--azul); font-family: 'Barlow Condensed', sans-serif; font-size: 24px; letter-spacing: 0.06em; }
+  #login-popup .login-subtitle { color: #888; font-size: 11px; margin-bottom: 20px; letter-spacing: 0.06em; text-transform: uppercase; }
+  #login-popup .login-field { margin: 14px 0; text-align: left; }
+  #login-popup .login-field label { display: block; font-size: 11px; color: #555; margin-bottom: 5px; font-weight: 700; letter-spacing: 0.08em; font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; }
+  #login-popup .login-field input { width: 100%; padding: 12px; font-size: 22px; letter-spacing: 10px; text-align: center; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; font-family: monospace; transition: border-color 0.2s; }
+  #login-popup .login-field input:focus { border-color: var(--azul); outline: none; }
+  #login-popup .login-error { color: #f44336; font-size: 12px; margin: 8px 0; display: none; font-weight: 700; letter-spacing: 0.04em; }
+  #login-popup .login-btn { width: 100%; padding: 12px; font-size: 16px; font-weight: 800; color: #fff; background: var(--azul); border: none; border-radius: 8px; cursor: pointer; margin-top: 14px; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.1em; transition: background 0.2s; }
+  #login-popup .login-btn:hover:not(:disabled) { background: var(--azul-claro); }
+  #login-popup .login-btn:disabled { background: #ccc; cursor: not-allowed; }
+  /* Badge usuário logado no header */
+  .header-user-badge { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; display: none; align-items: center; gap: 5px; }
+  .header-user-badge.visivel { display: inline-flex; }
+
+</style>
+<script src="usuarios.js"></script>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">⚡</div>
+  <div>
+    <div class="header-title">BUSCADOR DE INCIDÊNCIAS <span style="font-size:13px;opacity:0.6;font-weight:600;">v3.6</span></div>
+    <div class="header-sub">GERADOR DE MENSAGEM PARA EQUIPES DE CAMPO</div>
+  </div>
+  <div class="header-badge" id="badgeQtd">0 REGISTROS</div>
+  <div class="header-user-badge" id="headerUserBadge">👤 <span id="nomeUsuarioLogado"></span></div>
+  <button class="header-cfg-btn" id="btnModoTabela" onclick="window.location.href='tabela.html'" style="background:rgba(46,125,50,0.3);border-color:rgba(46,125,50,0.5);display:inline-flex;">📊 MODO TABELA</button>
+  <button class="header-cfg-btn" id="btnCfgHeader" onclick="irParaAba('cfg')">⚙️ CONFIGURAR CAMPOS</button>
+</div>
+
+<!-- POPUP LGPD -->
+<div id="lgpd-overlay" style="display:flex;">
+  <div id="lgpd-popup">
+    <div class="lgpd-header">
+      <button class="lgpd-btn" onclick="fecharLGPD()">✔ LI E ESTOU DE ACORDO</button>
+    </div>
+    <div class="lgpd-body">
+      <div class="lgpd-nota">
+        🔒 <strong>Nota 1 — Privacidade &amp; LGPD</strong><br><br>
+        Este aplicativo <strong>não coleta, não armazena e não transmite</strong> nenhuma informação a servidores externos. Todos os dados ficam exclusivamente no seu dispositivo.<br><br>
+        Em conformidade com a <strong>LGPD — Lei nº 13.709/2018</strong>.
+      </div>
+      <div class="lgpd-nota">
+        📡 <strong>Nota 2 — Processamento Local</strong><br><br>
+        Todos os dados são <strong>processados exclusivamente na máquina do usuário</strong>. Nenhuma informação é enviada, armazenada ou acessada por servidores externos ou nuvem. Os dados permanecem sob <strong>total controle do usuário</strong> e do seu dispositivo.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+  <div id="login-popup">
+    <h2>🔐 ACESSO AO SISTEMA</h2>
+    <p class="login-subtitle">Digite suas credenciais para continuar</p>
+    <div class="login-field">
+      <label>👤 USUÁRIO (4 dígitos)</label>
+      <input type="password" id="login-usuario" maxlength="4" placeholder="••••"
+        oninput="this.value=this.value.replace(/\D/g,'');verificarCamposLogin();"
+        onkeypress="if(event.key==='Enter')tentarLogin();">
+    </div>
+    <div class="login-field">
+      <label>🔑 SENHA (4 dígitos)</label>
+      <input type="password" id="login-senha" maxlength="4" placeholder="••••"
+        oninput="this.value=this.value.replace(/\D/g,'');verificarCamposLogin();"
+        onkeypress="if(event.key==='Enter')tentarLogin();">
+    </div>
+    <p id="login-error" class="login-error">❌ Usuário ou senha incorretos!</p>
+    <button id="login-btn" class="login-btn" onclick="tentarLogin()" disabled>ENTRAR</button>
+  </div>
+</div>
+
+<!-- Bloqueio de conteúdo até login -->
+<div id="main-bloqueio" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:99990;background:transparent;pointer-events:all;"></div>
+
+<div class="main">
+
+  <!-- LAYOUT PRINCIPAL (transparente) -->
+  <div class="layout-principal">
+  <div class="conteudo-direito">
+
+  <!-- FAIXA SUPERIOR: DADOS + BUSCA -->
+  <div class="faixa-topo">
+
+    <!-- LINHA 1: DADOS DA API (compacto) + ÁREAS ATIVAS (horizontal) -->
+    <div class="faixa-topo-linha1">
+
+      <!-- DADOS DA API -->
+      <div class="dados-api-compacto" style="overflow:visible; border-radius: 12px;">
+        <div class="dados-header" onclick="toggleDados()">
+          <span>📋</span><span>DADOS DA API</span>
+          <span class="dados-toggle" id="dadosToggle">▼</span>
+        </div>
+        <div class="dados-body" id="dadosBody">
+          <div class="instrucao">
+            1. ACESSE: <a href="#" onclick="return false;">wstecnicaindicadoresce.enelint.global/...</a><br>
+            2. FAÇA LOGIN E ABRA O LINK DA API NO NAVEGADOR<br>
+            3. SELECIONE TUDO (CTRL+A), COPIE (CTRL+C) E COLE ABAIXO
+          </div>
+          <div class="dados-cache-badge" id="dadosCacheBadge">💾 DADOS CARREGADOS DO CACHE — ÚLTIMA CARGA: <span id="cacheTempo"></span></div>
+          <textarea class="dados-input" id="dadosInput" placeholder='COLE AQUI O JSON DA API...&#10;{"CodigoErro":"0","Dados":[]}'></textarea>
+          <div class="btn-dados-row">
+            <button class="btn-carregar" id="btnCarregar" onclick="carregarDados()">⬆ CARREGAR DADOS</button>
+            <button class="btn-apagar"   id="btnApagar"   onclick="apagarDados()">🗑 APAGAR DADOS</button>
+          </div>
+          <div class="status-dados" id="statusDados"></div>
+        </div>
+      </div>
+
+      <!-- ÁREAS ATIVAS — faixa horizontal com chips e scroll -->
+      <div class="areas-ativas-faixa" id="areasAtivasFaixa">
+        <span class="areas-ativas-faixa-label">ÁREAS ATIVAS</span>
+        <div class="areas-ativas-faixa-chips" id="areasAtivasFaixaChips">
+          <span class="areas-ativas-faixa-vazia" id="areasAtivasFaixaVazia">NENHUMA SELECIONADA</span>
+        </div>
+        <div class="areas-ativas-nav">
+          <button class="areas-ativas-nav-btn" id="btnNavEsq" onclick="navAreasEsq()" title="Anterior">◀</button>
+          <button class="areas-ativas-nav-btn" id="btnNavDir" onclick="navAreasDir()" title="Próximo">▶</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BUSCA (ocupa largura toda sem mini card ao lado) -->
+    <div class="card">
+      <div class="card-header">
+        <span><span class="hl">🔍</span> BUSCAR INCIDÊNCIA</span>
+        <button id="btnLimparFiltros" onclick="limparTodosFiltros()"
+          style="background:#c62828;color:#fff;border:none;border-radius:20px;padding:3px 12px;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.08em;cursor:not-allowed;opacity:0.35;white-space:nowrap;transition:opacity 0.2s;">
+          🗑 LIMPAR FILTROS
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="busca-row">
+            <div class="campo-wrap">
+              <div class="campo-label-row">
+                <span class="campo-label">Nº DA INCIDÊNCIA</span>
+                <button class="campo-clear" id="clearIncidencia" onclick="limparCampo('inputIncidencia','clearIncidencia')" title="Limpar">✕</button>
+              </div>
+              <input class="busca-input" id="inputIncidencia" type="text" placeholder="EX: 4060741" oninput="buscarAuto();toggleClear('inputIncidencia','clearIncidencia')" maxlength="10">
+            </div>
+            <div class="campo-wrap">
+              <div class="campo-label-row">
+                <span class="campo-label">Nº DO CLIENTE</span>
+                <button class="campo-clear" id="clearCliente" onclick="limparCampo('inputCliente','clearCliente')" title="Limpar">✕</button>
+              </div>
+              <input class="busca-input" id="inputCliente" type="text" placeholder="EX: 2803068" oninput="buscarAuto();toggleClear('inputCliente','clearCliente')">
+            </div>
+            <div class="campo-wrap">
+              <div class="campo-label-row">
+                <span class="campo-label">MEDIDOR</span>
+                <button class="campo-clear" id="clearMedidor" onclick="limparCampo('inputMedidor','clearMedidor')" title="Limpar">✕</button>
+              </div>
+              <input class="busca-input" id="inputMedidor" type="text" placeholder="EX: 00123456" oninput="buscarAuto();toggleClear('inputMedidor','clearMedidor')">
+            </div>
+            <div class="campo-wrap">
+              <div class="campo-label-row">
+                <span class="campo-label">ENDEREÇO</span>
+                <button class="campo-clear" id="clearEndereco" onclick="limparCampo('inputEndereco','clearEndereco')" title="Limpar">✕</button>
+              </div>
+              <input class="busca-input" id="inputEndereco" type="text" placeholder="EX: RUA DAS FLORES" oninput="buscarAuto();toggleClear('inputEndereco','clearEndereco')">
+            </div>
+            <div class="campo-wrap">
+              <div class="campo-label-row">
+                <span class="campo-label">NOME DO CLIENTE</span>
+                <button class="campo-clear" id="clearNomeCliente" onclick="limparCampo('inputNomeCliente','clearNomeCliente')" title="Limpar">✕</button>
+              </div>
+              <input class="busca-input" id="inputNomeCliente" type="text" placeholder="EX: MARIA SILVA" oninput="buscarAuto();toggleClear('inputNomeCliente','clearNomeCliente')">
+            </div>
+            <div class="campo-wrap">
+              <div class="campo-label-row">
+                <span class="campo-label">CIRCUITO</span>
+                <button class="campo-clear" id="clearCircuito" onclick="limparCampo('inputCircuito','clearCircuito')" title="Limpar">✕</button>
+              </div>
+              <input class="busca-input" id="inputCircuito" type="text" placeholder="EX: PCJ01P6" oninput="buscarAuto();toggleClear('inputCircuito','clearCircuito')">
+            </div>
+            <div id="areaFiltroWrap" style="display:none;">
+              <div class="campo-label-row">
+                <span class="campo-label">🗂 ÁREA DE DESPACHO</span>
+                <button class="campo-clear visivel" onclick="limparAreasDespacho()" title="Limpar áreas">✕</button>
+              </div>
+              <div class="area-filtro-box" id="areaFiltroBox" onclick="toggleAreaDropdown(event)">
+                <span class="area-filtro-placeholder" id="areaPlaceholder">TODAS AS ÁREAS</span>
+                <span class="area-filtro-arrow" id="areaArrow">▼</span>
+              </div>
+            </div>
+            <div id="viaturaFiltroWrap" style="display:none;">
+              <div class="campo-label-row">
+                <span class="campo-label">🚗 VIATURA</span>
+                <button class="campo-clear visivel" onclick="limparViatura()" title="Limpar viatura">✕</button>
+              </div>
+              <div class="area-filtro-box" id="viaturaFiltroBox" onclick="toggleViaturaDropdown(event)">
+                <span class="area-filtro-placeholder" id="viaturaPlaceholder">TODAS AS VIATURAS</span>
+                <span class="area-filtro-arrow" id="viaturaArrow">▼</span>
+              </div>
+            </div>
+            <!-- RELÓGIO -->
+            <div class="relogio-wrap" id="relogioWrap">
+              <span class="relogio-dot"></span>
+              <div>
+                <div class="relogio-label">TEMPO DESDE CARGA</div>
+                <div class="relogio-tempo" id="relogioCont">00:00:00</div>
+              </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- fim faixa-topo -->
+
+  <!-- WORKSPACE 3 COLUNAS: LISTA | DETALHE | PRÉVIA -->
+  <div class="workspace" id="workspace" style="display:none;">
+
+    <!-- COL 1: LISTA -->
+    <div class="sidebar-lista" id="sidebarLista">
+      <div class="sidebar-lista-header">
+        <span class="sort-btns" style="margin-left:0;">
+          <button class="sort-btn" id="btnSortEnd"  onclick="ordenarLista('end')"   title="Ordenar por endereço"><img src="icon_endereco.png" style="height:31px;width:31px;object-fit:contain;"><span class="sort-sub" id="subEnd"><span class="s1">A</span><span class="s2">→Z</span></span></button>
+          <button class="sort-btn" id="btnSortUrg"  onclick="ordenarLista('urg')"   title="Ordenar por tempo"><img src="icon_tempo.png" style="height:31px;width:31px;object-fit:contain;"><span class="sort-sub" id="subUrg"><span class="s1">A</span><span class="s2">→Z</span></span></button>
+          <button class="sort-btn" id="btnSortViat" onclick="ordenarLista('viat')"  title="Ordenar por viatura"><img src="icon_viatura.png" style="height:31px;width:31px;object-fit:contain;"><span class="sort-sub" id="subViat"><span class="s1">A</span><span class="s2">→Z</span></span></button>
+          <button class="sort-btn" id="btnSortCirc" onclick="ordenarLista('circ')"  title="Ordenar por alimentador"><img src="icon_alimentador.png" style="height:31px;width:31px;object-fit:contain;"><span class="sort-sub" id="subCirc"><span class="s1">A</span><span class="s2">→Z</span></span></button>
+          <button class="sort-btn" id="btnFiltroVital" onclick="toggleFiltroVital()" title="Filtrar clientes vitais"><img src="icon_vital.png" style="height:31px;width:31px;object-fit:contain;"></button>
+          <button class="sort-btn" id="btnLimparOrdem" onclick="limparOrdemEFiltros()" title="Limpar classificações e filtros da lista" style="display:none;">✕</button>
+        </span>
+        <span id="qtdResultados" style="font-size:27px;font-weight:800;color:#fff;letter-spacing:0.04em;"></span>
+      </div>
+      <div class="sidebar-lista-scroll" id="listaResultados"></div>
+    </div>
+
+    <!-- COL 2: DETALHE -->
+    <div class="col-detalhe">
+      <div class="col-detalhe-scroll">
+        <div class="col-detalhe-vazio" id="detalheVazio">
+          <span class="ei">📄</span>
+          SELECIONE UMA INCIDÊNCIA
+        </div>
+        <div class="card" id="cardDetalhe" style="display:none;border-radius:0;border:none;box-shadow:none;">
+          <div class="card-header">
+            <span><span class="hl">📄</span> DETALHE DA INCIDÊNCIA</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span id="detalheEstadoBadge" style="font-size:11px;opacity:0.85;"></span>
+              <button class="btn-captura" onclick="capturarDetalhe()">📷 CAPTURAR</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="detalhe-grid" id="detalheGrid"></div>
+          </div>
+        </div>
+        <div class="acoes-bar" id="acoesBarra" style="display:none;">
+          <a id="btnMapaDispositivo" class="mapa-btn"       target="_blank" href="#" style="display:none;flex:1;justify-content:center;">📍 GPS DISPOSITIVO</a>
+          <a id="btnMapaCliente"     class="mapa-btn cinza" target="_blank" href="#" style="display:none;flex:1;justify-content:center;">👤 GPS CLIENTE</a>
+          <button class="toggle-btn" id="btnDetalhes"   onclick="toggleDetalhes()"   style="flex:1;">📋 DETALHES</button>
+          <button class="toggle-btn" id="btnPrioridade" onclick="togglePrioridade()" style="flex:1;">⚡ SINALIZAR PRIORIDADE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COL 3: PRÉVIA -->
+    <div class="col-previa">
+      <div class="painel-direito">
+        <div class="painel-abas">
+          <div class="painel-aba ativa" id="abaPrevia" onclick="irParaAba('previa')">👁 PRÉVIA</div>
+          <div class="painel-aba"       id="abaCfg"    onclick="irParaAba('cfg')">⚙️ CONFIGURAR</div>
+        </div>
+        <div class="painel-conteudo ativo" id="conteudoPrevia">
+          <div class="preview-acoes">
+            <button class="btn-copiar-prev" id="btnCopiarPrevia" onclick="copiarPrevia()">📋 COPIAR MENSAGEM</button>
+            <button class="btn-editar-prev" id="btnEditarPrevia" onclick="toggleEditar()">✏️ EDITAR</button>
+          </div>
+          <div class="preview-scroll">
+            <div class="preview-vazio" id="previewVazio">
+              <span class="pv-icon">💬</span>
+              SELECIONE UMA INCIDÊNCIA<br>PARA VER A PRÉVIA
+            </div>
+            <div class="preview-txt" id="previewTxt" style="display:none;"></div>
+            <div class="editor-struct" id="editorStruct"></div>
+          </div>
+        </div>
+        <div class="painel-conteudo" id="conteudoCfg">
+          <div class="cfg-corpo">
+            <div class="cfg-section-title">IDENTIFICAÇÃO</div>
+            <label class="cfg-item"><input type="checkbox" id="cfg_incidencia"  checked onchange="onCfgChange()"><span class="cfg-item-label">Nº INCIDÊNCIA</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_estado"      checked onchange="onCfgChange()"><span class="cfg-item-label">ESTADO</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_area"        checked onchange="onCfgChange()"><span class="cfg-item-label">ÁREA DE DESPACHO</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_viatura"     checked onchange="onCfgChange()"><span class="cfg-item-label">VIATURA</span></label>
+            <div class="cfg-section-title">CLIENTE</div>
+            <label class="cfg-item"><input type="checkbox" id="cfg_cliente"     checked onchange="onCfgChange()"><span class="cfg-item-label">NOME DO CLIENTE</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_num_cliente" checked onchange="onCfgChange()"><span class="cfg-item-label">Nº CLIENTE</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_medidor"     checked onchange="onCfgChange()"><span class="cfg-item-label">MEDIDOR</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_tel1"        checked onchange="onCfgChange()"><span class="cfg-item-label">TELEFONE 1</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_tel2"        checked onchange="onCfgChange()"><span class="cfg-item-label">TELEFONE 2</span></label>
+            <div class="cfg-section-title">OCORRÊNCIA</div>
+            <label class="cfg-item"><input type="checkbox" id="cfg_tipo"        checked onchange="onCfgChange()"><span class="cfg-item-label">TIPO RECLAMAÇÃO</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_rede"        checked onchange="onCfgChange()"><span class="cfg-item-label">TIPO DE REDE</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_nivel"       checked onchange="onCfgChange()"><span class="cfg-item-label">NÍVEL TENSÃO</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_circuito"    checked onchange="onCfgChange()"><span class="cfg-item-label">CIRCUITO</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_ponto_el"    checked onchange="onCfgChange()"><span class="cfg-item-label">PONTO ELÉTRICO</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_duracao"     checked onchange="onCfgChange()"><span class="cfg-item-label">DURAÇÃO / PRAZO</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_clientes_af" checked onchange="onCfgChange()"><span class="cfg-item-label">CLIENTES AFETADOS</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_avisos"      checked onchange="onCfgChange()"><span class="cfg-item-label">TOTAL AVISOS</span></label>
+            <div class="cfg-section-title">LOCALIZAÇÃO</div>
+            <label class="cfg-item"><input type="checkbox" id="cfg_endereco"    checked onchange="onCfgChange()"><span class="cfg-item-label">ENDEREÇO</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_referencia"  checked onchange="onCfgChange()"><span class="cfg-item-label">PONTO DE REFERÊNCIA</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_coord_disp"  checked onchange="onCfgChange()"><span class="cfg-item-label">LINK COORD. DISPOSITIVO</span></label>
+            <label class="cfg-item"><input type="checkbox" id="cfg_coord_cli"   checked onchange="onCfgChange()"><span class="cfg-item-label">LINK COORD. CLIENTE</span></label>
+            <div class="cfg-section-title">OBSERVAÇÕES</div>
+            <label class="cfg-item"><input type="checkbox" id="cfg_comentario"  checked onchange="onCfgChange()"><span class="cfg-item-label">COMENTÁRIOS / OBS.</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- fim workspace -->
+
+  </div><!-- fim conteudo-direito -->
+  </div><!-- fim layout-principal -->
+
+</div>
+
+<div class="area-dropdown" id="areaDropdown">
+  <div class="area-dropdown-search">
+    <input type="text" id="areaSearchInput" placeholder="FILTRAR ÁREA..." oninput="filtrarOpcoesArea()" onclick="event.stopPropagation()">
+  </div>
+  <div class="area-sel-btns">
+    <button class="area-sel-btn todas" onclick="selecionarTodasAreas();event.stopPropagation()">✔ TODAS</button>
+    <button class="area-sel-btn nenhuma" onclick="limparAreasDespacho();event.stopPropagation()">✕ NENHUMA</button>
+  </div>
+  <div id="areaOpcoes"></div>
+</div>
+
+<div class="area-dropdown" id="viaturaDropdown">
+  <div class="area-dropdown-search">
+    <input type="text" id="viaturaSearchInput" placeholder="FILTRAR VIATURA..." oninput="filtrarOpcoesViatura()" onclick="event.stopPropagation()">
+  </div>
+  <div class="area-sel-btns">
+    <button class="area-sel-btn todas" onclick="selecionarTodasViaturas();event.stopPropagation()">✔ TODAS</button>
+    <button class="area-sel-btn nenhuma" onclick="limparViatura();event.stopPropagation()">✕ NENHUMA</button>
+  </div>
+  <div id="viaturaOpcoes"></div>
+</div>
+
+<div class="toast" id="toast">✅ MENSAGEM COPIADA!</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  LOGIN & LGPD
+// ══════════════════════════════════════════════
+let usuarioLogado = null;
+
+function fecharLGPD() {
+  document.getElementById('lgpd-overlay').style.display = 'none';
+  document.getElementById('login-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('login-usuario').focus(), 100);
+}
+
+function verificarCamposLogin() {
+  const u = document.getElementById('login-usuario').value;
+  const s = document.getElementById('login-senha').value;
+  document.getElementById('login-btn').disabled = !(u.length === 4 && s.length === 4);
+}
+
+function tentarLogin() {
+  const usuario = document.getElementById('login-usuario').value;
+  const senha   = document.getElementById('login-senha').value;
+  const errEl   = document.getElementById('login-error');
+
+  const encontrado = typeof validarLogin === 'function'
+    ? validarLogin(usuario, senha)
+    : null;
+
+  if (encontrado) {
+    usuarioLogado = encontrado;
+    // Salvar sessão para compartilhar com tabela.html
+    sessionStorage.setItem('buscador_sessao', JSON.stringify({ nome: encontrado.nome, usuario: encontrado.usuario || '' }));
+    document.getElementById('login-overlay').style.display = 'none';
+    const badge = document.getElementById('headerUserBadge');
+    badge.classList.add('visivel');
+    document.getElementById('nomeUsuarioLogado').textContent = encontrado.nome.toUpperCase();
+    document.getElementById('main-bloqueio').style.display = 'none';
+    atualizarBotoesToggle();
+  } else {
+    errEl.style.display = 'block';
+    document.getElementById('login-usuario').value = '';
+    document.getElementById('login-senha').value = '';
+    document.getElementById('login-usuario').focus();
+    verificarCamposLogin();
+    setTimeout(() => { errEl.style.display = 'none'; }, 3000);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════════
+let dadosCarregados       = [];
+let incidenciaSelecionada = null;
+let flagPrioridade        = false;
+let flagDetalhes          = true; // ativo por padrão — inclui detalhes na cópia
+let modoEdicao            = false;
+let edicaoManual          = {};   // { chave: valorEditado }
+
+// Relógio / live timers — UM único interval para tudo
+let _globalInterval  = null;
+let _cargaTimestamp  = null;
+let _liveTimers      = {};   // spanId → { segNaCarga, spanEl }
+let _listaTimers     = [];   // [{ segNaCarga, spanEl }] — badges da lista de resultados
+
+const STORAGE_KEY_DADOS    = 'buscador_dados_v1';
+const STORAGE_KEY_TSLOAD   = 'buscador_tsload_v1';
+const STORAGE_KEY_CFG      = 'buscador_cfg_v1';
+const STORAGE_KEY_DETALHES = 'buscador_detalhes_v1';
+const STORAGE_KEY_AREAS    = 'buscador_areas_v1';
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+window.onload = () => {
+  // Verificar se já tem sessão ativa (vindo da tabela ou mesma aba)
+  const sessaoAtiva = sessionStorage.getItem('buscador_sessao');
+  if (sessaoAtiva) {
+    try {
+      const s = JSON.parse(sessaoAtiva);
+      usuarioLogado = s;
+      document.getElementById('lgpd-overlay').style.display = 'none';
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('main-bloqueio').style.display = 'none';
+      const badge = document.getElementById('headerUserBadge');
+      badge.classList.add('visivel');
+      document.getElementById('nomeUsuarioLogado').textContent = (s.nome || '').toUpperCase();
+    } catch(e) {}
+  } else {
+    // Sem sessão → mostra LGPD → login
+    document.getElementById('lgpd-overlay').style.display = 'flex';
+    document.getElementById('login-overlay').style.display = 'none';
+  }
+
+  carregarCfgStorage();
+  // Restaurar estado do botão detalhes
+  const detSalvo = localStorage.getItem(STORAGE_KEY_DETALHES);
+  if (detSalvo !== null) flagDetalhes = detSalvo === '1';
+  const dadosSalvos = localStorage.getItem(STORAGE_KEY_DADOS);
+  const tsSalvo     = localStorage.getItem(STORAGE_KEY_TSLOAD);
+  if (dadosSalvos) {
+    try {
+      const lista = JSON.parse(dadosSalvos);
+      if (lista && lista.length) {
+        dadosCarregados = lista;
+        _cargaTimestamp = tsSalvo ? parseInt(tsSalvo) : Date.now();
+        document.getElementById('badgeQtd').textContent = lista.length + ' REGISTROS';
+        const dt = new Date(_cargaTimestamp);
+        const dtStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR');
+        document.getElementById('cacheTempo').textContent = dtStr;
+        document.getElementById('dadosCacheBadge').classList.add('visivel');
+        mostrarStatus('✅ ' + lista.length + ' INCIDÊNCIAS (CACHE).', 'ok');
+        document.getElementById('btnCarregar').disabled = true;
+        document.getElementById('btnApagar').style.display = 'block';
+        document.getElementById('btnCfgHeader').classList.add('visivel');
+        iniciarRelogio();
+        // Restaurar áreas salvas e filtrar contra dados atuais
+        try {
+          const areasSalvas = localStorage.getItem(STORAGE_KEY_AREAS);
+          _areasSelecionadas = areasSalvas ? new Set(JSON.parse(areasSalvas)) : new Set();
+        } catch(e) { _areasSelecionadas = new Set(); }
+        filtrarSetsContraDados(lista);
+        localStorage.setItem(STORAGE_KEY_AREAS, JSON.stringify([..._areasSelecionadas]));
+        popularAreaDropdown();
+        atualizarChipsArea();
+        atualizarChipsViatura();
+        sincronizarAlturaAreasCard();
+        setTimeout(() => { buscarAuto(); atualizarBotoesToggle(); }, 50);
+        return;
+      }
+    } catch(e) {}
+  }
+  toggleDados();
+};
+
+// ══════════════════════════════════════════════
+//  ABAS
+// ══════════════════════════════════════════════
+function irParaAba(aba) {
+  ['previa','cfg'].forEach(a => {
+    document.getElementById('aba'   + a.charAt(0).toUpperCase() + a.slice(1)).classList.toggle('ativa', a === aba);
+    document.getElementById('conteudo' + a.charAt(0).toUpperCase() + a.slice(1)).classList.toggle('ativo', a === aba);
+  });
+}
+// IDs específicos
+function irParaAba(aba) {
+  document.getElementById('abaPrevia').classList.toggle('ativa', aba === 'previa');
+  document.getElementById('abaCfg').classList.toggle('ativa',    aba === 'cfg');
+  document.getElementById('conteudoPrevia').classList.toggle('ativo', aba === 'previa');
+  document.getElementById('conteudoCfg').classList.toggle('ativo',    aba === 'cfg');
+}
+
+// ══════════════════════════════════════════════
+//  TOGGLE DADOS
+// ══════════════════════════════════════════════
+function toggleDados() {
+  const body = document.getElementById('dadosBody');
+  const tog  = document.getElementById('dadosToggle');
+  const ab   = body.classList.toggle('aberto');
+  tog.classList.toggle('aberto', ab);
+}
+
+// ══════════════════════════════════════════════
+//  CARREGAR DADOS
+// ══════════════════════════════════════════════
+function carregarDados() {
+  const raw = document.getElementById('dadosInput').value.trim();
+  if (!raw) { mostrarStatus('NENHUM DADO INFORMADO.', 'err'); return; }
+  try {
+    const parsed = JSON.parse(raw);
+    let lista = [];
+    if (Array.isArray(parsed))                              lista = parsed;
+    else if (parsed.Dados && Array.isArray(parsed.Dados))  lista = parsed.Dados;
+    else if (parsed.dados && Array.isArray(parsed.dados))  lista = parsed.dados;
+    else for (const k of Object.keys(parsed)) { if (Array.isArray(parsed[k])) { lista = parsed[k]; break; } }
+
+    if (!lista.length) { mostrarStatus('JSON VÁLIDO MAS SEM REGISTROS.', 'err'); return; }
+    dadosCarregados = lista;
+
+    // Salvar no localStorage
+    _cargaTimestamp = Date.now();
+    try {
+      localStorage.setItem(STORAGE_KEY_DADOS, JSON.stringify(lista));
+      localStorage.setItem(STORAGE_KEY_TSLOAD, String(_cargaTimestamp));
+    } catch(e) { console.warn('localStorage cheio:', e); }
+
+    const dt = new Date(_cargaTimestamp);
+    const dtStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR');
+    document.getElementById('cacheTempo').textContent = dtStr;
+    document.getElementById('dadosCacheBadge').classList.add('visivel');
+
+    document.getElementById('badgeQtd').textContent = lista.length + ' REGISTROS';
+    mostrarStatus('✅ ' + lista.length + ' INCIDÊNCIAS CARREGADAS.', 'ok');
+    document.getElementById('dadosBody').classList.remove('aberto');
+    document.getElementById('dadosToggle').classList.remove('aberto');
+    document.getElementById('btnCfgHeader').classList.add('visivel');
+    document.getElementById('btnCarregar').disabled = true;
+    document.getElementById('btnApagar').style.display = 'block';
+    iniciarRelogio();
+    // Manter filtros válidos nos novos dados, remover os que não existem mais
+    filtrarSetsContraDados(lista);
+    localStorage.setItem(STORAGE_KEY_AREAS, JSON.stringify([..._areasSelecionadas]));
+    popularAreaDropdown();
+    atualizarChipsArea();
+    atualizarChipsViatura();
+    sincronizarAlturaAreasCard();
+    setTimeout(() => { buscarAuto(); atualizarBotoesToggle(); }, 50);
+  } catch(e) { mostrarStatus('❌ JSON INVÁLIDO.', 'err'); }
+}
+
+// ══════════════════════════════════════════════
+//  APAGAR DADOS
+// ══════════════════════════════════════════════
+function apagarDados() {
+  if (!confirm('APAGAR OS DADOS CARREGADOS E O CACHE?\nVocê precisará colar o JSON novamente.')) return;
+  dadosCarregados = [];
+  incidenciaSelecionada = null;
+  localStorage.removeItem(STORAGE_KEY_DADOS);
+  localStorage.removeItem(STORAGE_KEY_TSLOAD);
+  document.getElementById('dadosInput').value = '';
+  document.getElementById('dadosCacheBadge').classList.remove('visivel');
+  document.getElementById('badgeQtd').textContent = '0 REGISTROS';
+  document.getElementById('btnCarregar').disabled = false;
+  document.getElementById('btnApagar').style.display = 'none';
+  document.getElementById('btnCfgHeader').classList.remove('visivel');
+  document.getElementById('workspace').style.display = 'none';
+  pararRelogio();
+  pararLiveTimers();
+  _listaTimers = [];
+  _areasSelecionadas = new Set();
+  document.getElementById('areaFiltroWrap').style.display = 'none';
+  const ac = document.getElementById('areasAtivasCard');
+  if (ac) ac.classList.remove('visivel');
+  mostrarStatus('🗑 DADOS APAGADOS. COLE O JSON PARA CARREGAR NOVAMENTE.', 'err');
+  if (!document.getElementById('dadosBody').classList.contains('aberto')) toggleDados();
+}
+
+// ══════════════════════════════════════════════
+//  TICK GLOBAL — relógio de cabeçalho + durações live
+// ══════════════════════════════════════════════
+function _tickGlobal() {
+  if (!_cargaTimestamp) return;
+  const decorridos = Math.floor((Date.now() - _cargaTimestamp) / 1000);
+
+  // — relógio de cabeçalho
+  const h = Math.floor(decorridos / 3600);
+  const m = Math.floor((decorridos % 3600) / 60);
+  const s = decorridos % 60;
+  const el = document.getElementById('relogioCont');
+  if (el) el.textContent = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+
+  // — badges de tempo nos cards da lista de resultados
+  const PRAZO = 24 * 3600;
+  _listaTimers.forEach(({ segNaCarga, spanEl }) => {
+    if (!spanEl || !spanEl.isConnected) return;
+    const segRest = PRAZO - (segNaCarga + decorridos);
+    const { txt, vencida } = formatarRestante(segRest);
+    if (vencida) {
+      spanEl.textContent = `🔴 ${txt}`;
+      spanEl.className = 'res-tempo vencido';
+    } else if (segRest <= 12*3600) {
+      spanEl.textContent = `🟡 ${txt}`;
+      spanEl.className = 'res-tempo amarelo';
+    } else {
+      spanEl.textContent = `🟢 ${txt}`;
+      spanEl.className = 'res-tempo verde';
+    }
+  });
+  // — duração dinâmica no card detalhe
+  const durSpan = document.getElementById('duracaoLive');
+  if (durSpan && durSpan.dataset.segBase) {
+    const segBase = parseInt(durSpan.dataset.segBase);
+    const segAtual = segBase + decorridos;
+    const dh = Math.floor(segAtual / 3600);
+    const dm = Math.floor((segAtual % 3600) / 60);
+    const ds = segAtual % 60;
+    durSpan.textContent = String(dh).padStart(2,'0') + ':' + String(dm).padStart(2,'0') + ':' + String(ds).padStart(2,'0');
+  }
+
+  // — atualizar prévia ao vivo (duração e tempo restante)
+  if (incidenciaSelecionada && !modoEdicao) {
+    const txt = document.getElementById('previewTxt');
+    if (txt && txt.style.display === 'block') {
+      txt.textContent = linhasParaTexto(montarLinhas(), !flagDetalhes);
+    }
+  }
+
+  Object.values(_liveTimers).forEach(({ segNaCarga, spanEl }) => {
+    if (!spanEl || !spanEl.isConnected) return;
+    const segRest = PRAZO - (segNaCarga + decorridos);
+    const { txt, vencida } = formatarRestante(segRest);
+    const cor = segRest > 12*3600 ? 'verde-bg' : segRest > 0 ? 'amarelo-bg' : 'vencido';
+    spanEl.textContent  = vencida ? `🔴 ${txt}` : `⏱ faltam ${txt}`;
+    spanEl.className    = `faltam-live ${cor}`;
+  });
+}
+
+function iniciarRelogio() {
+  if (_globalInterval) clearInterval(_globalInterval);
+  document.getElementById('relogioWrap').classList.add('visivel');
+  _tickGlobal(); // valor imediato
+  _globalInterval = setInterval(_tickGlobal, 1000);
+}
+function pararRelogio() {
+  if (_globalInterval) { clearInterval(_globalInterval); _globalInterval = null; }
+  const wrap = document.getElementById('relogioWrap');
+  if (wrap) wrap.classList.remove('visivel');
+  const cont = document.getElementById('relogioCont');
+  if (cont) cont.textContent = '00:00:00';
+  _liveTimers = {};
+}
+// Mantidas por compatibilidade — agora são no-op separados do interval global
+function iniciarLiveTimers() { /* gerenciado pelo _globalInterval */ }
+function pararLiveTimers()   { _liveTimers = {}; }
+function tickLiveTimers()    { _tickGlobal(); }
+function atualizarRelogio()  { _tickGlobal(); }
+
+function registrarLiveTimer(spanId, segNaCarga, spanEl) {
+  _liveTimers[spanId] = { segNaCarga, spanEl };
+}
+
+// ══════════════════════════════════════════════
+//  CONFIG — SALVAR/CARREGAR NO STORAGE
+// ══════════════════════════════════════════════
+function salvarCfgStorage() {
+  const ids = ['cfg_incidencia','cfg_estado','cfg_area','cfg_viatura','cfg_cliente','cfg_num_cliente',
+    'cfg_medidor','cfg_tel1','cfg_tel2','cfg_tipo','cfg_rede','cfg_nivel','cfg_circuito','cfg_ponto_el',
+    'cfg_duracao','cfg_clientes_af','cfg_avisos','cfg_endereco','cfg_referencia','cfg_coord_disp',
+    'cfg_coord_cli','cfg_comentario'];
+  const obj = {};
+  ids.forEach(id => { const el = document.getElementById(id); if (el) obj[id] = el.checked; });
+  try { localStorage.setItem(STORAGE_KEY_CFG, JSON.stringify(obj)); } catch(e) {}
+}
+function carregarCfgStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_CFG);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    Object.keys(obj).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.checked = obj[id];
+    });
+  } catch(e) {}
+}
+
+function mostrarStatus(msg, tipo) {
+  const el = document.getElementById('statusDados');
+  el.textContent = msg; el.className = 'status-dados ' + tipo;
+}
+
+let _ordemLista       = null;
+let _listaAtual       = [];
+let _filtroVital      = false;
+let _viaturasSelecionadas = new Set();
+
+// ── Limpar campo individual
+function limparTodosFiltros() {
+  // Limpar todos os inputs de texto
+  ['inputIncidencia','inputCliente','inputMedidor','inputEndereco','inputNomeCliente','inputCircuito'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  // Limpar X dos campos
+  ['clearIncidencia','clearCliente','clearMedidor','clearEndereco','clearNomeCliente','clearCircuito'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('visivel');
+  });
+  // Limpar áreas
+  _areasSelecionadas.clear();
+  document.querySelectorAll('.area-option').forEach(opt => {
+    const cb = opt.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = false;
+    opt.classList.remove('selecionada');
+  });
+  // Limpar viaturas
+  _viaturasSelecionadas.clear();
+  document.querySelectorAll('[data-viatura]').forEach(opt => {
+    const cb = opt.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = false;
+    opt.classList.remove('selecionada');
+  });
+  atualizarChipsViatura();
+  atualizarChipsArea();
+  // Limpar filtro vital
+  _filtroVital = false;
+  const btnVital = document.getElementById('btnFiltroVital');
+  if (btnVital) btnVital.classList.remove('ativo');
+  // Reset seleção
+  incidenciaSelecionada = null;
+  modoEdicao = false;
+  edicaoManual = {};
+  document.getElementById('cardDetalhe').style.display = 'none';
+  document.getElementById('acoesBarra').style.display = 'none';
+  document.getElementById('detalheVazio').style.display = 'flex';
+  renderizarPrevia();
+  atualizarBtnLimpar();
+  buscar();
+}
+
+function atualizarBtnLimpar() {
+  const btn = document.getElementById('btnLimparFiltros');
+  if (!btn) return;
+  const temFiltro = _areasSelecionadas.size > 0 || _viaturasSelecionadas.size > 0 || _filtroVital ||
+    ['inputIncidencia','inputCliente','inputMedidor','inputEndereco','inputNomeCliente','inputCircuito']
+      .some(id => (document.getElementById(id)?.value || '') !== '');
+  btn.style.opacity = temFiltro ? '1' : '0.35';
+  btn.style.cursor  = temFiltro ? 'pointer' : 'not-allowed';
+  btn.disabled = !temFiltro;
+}
+
+// ══════════════════════════════════════════════
+//  FILTRAR SETS CONTRA NOVOS DADOS
+// ══════════════════════════════════════════════
+function filtrarSetsContraDados(lista) {
+  // Áreas existentes nos novos dados
+  const areasExistentes = new Set(
+    lista.map(i => (i.Area_Despacho||'').trim().toUpperCase()).filter(Boolean)
+  );
+  // Manter só áreas que existem
+  _areasSelecionadas = new Set([..._areasSelecionadas].filter(a => areasExistentes.has(a)));
+
+  // Viaturas existentes nos novos dados
+  const viaturasExistentes = new Set(
+    lista.map(i => (i.Viatura||'').trim().toUpperCase()).filter(v => v && v !== '-')
+  );
+  // Manter só viaturas que existem
+  _viaturasSelecionadas = new Set([..._viaturasSelecionadas].filter(v => viaturasExistentes.has(v)));
+}
+
+function limparCampo(inputId, clearId) {
+  const el = document.getElementById(inputId);
+  if (el) el.value = '';
+  const cl = document.getElementById(clearId);
+  if (cl) cl.classList.remove('visivel');
+  buscarAuto();
+}
+
+// ── Mostrar/esconder X do campo
+function toggleClear(inputId, clearId) {
+  const el = document.getElementById(inputId);
+  const cl = document.getElementById(clearId);
+  if (el && cl) cl.classList.toggle('visivel', el.value.length > 0);
+}
+
+// Detecta se uma incidência tem palavra vital/essencial em qualquer campo
+function isVital(item) {
+  const campos = [
+    item.Cliente, item.Comentario, item.Observacao_Cliente,
+    item.Ponto_de_Referencia, item.Tipo_Reclamacao
+  ].join(' ');
+  return /vital|essencial/i.test(campos);
+}
+
+function toggleFiltroVital() {
+  _filtroVital = !_filtroVital;
+  const btn = document.getElementById('btnFiltroVital');
+  if (btn) btn.classList.toggle('ativo', _filtroVital);
+  atualizarBtnLimparOrdem();
+  buscar();
+}
+
+function ordenarLista(dir) {
+  if (dir === 'end') {
+    _ordemLista = _ordemLista === 'endA' ? 'endZ' : 'endA';
+  } else if (dir === 'urg') {
+    _ordemLista = _ordemLista === 'asc' ? 'desc' : 'asc';
+  } else if (dir === 'viat') {
+    _ordemLista = _ordemLista === 'viatA' ? 'viatZ' : 'viatA';
+  } else if (dir === 'circ') {
+    _ordemLista = _ordemLista === 'circA' ? 'circZ' : 'circA';
+  }
+
+  ['btnSortEnd','btnSortUrg','btnSortViat','btnSortCirc'].forEach(id =>
+    document.getElementById(id)?.classList.remove('ativo'));
+
+  const btnEnd = document.getElementById('btnSortEnd');
+  if (btnEnd) {
+    const ativo = _ordemLista === 'endA' || _ordemLista === 'endZ';
+    btnEnd.classList.toggle('ativo', ativo);
+    const sub = document.getElementById('subEnd');
+    if (sub) sub.innerHTML = _ordemLista === 'endZ' ? '<span class="s1">Z</span><span class="s2">→A</span>' : '<span class="s1">A</span><span class="s2">→Z</span>';
+    btnEnd.title = ativo ? (_ordemLista === 'endZ' ? 'Endereço Z→A — clique para A→Z' : 'Endereço A→Z — clique para Z→A') : 'Ordenar por endereço';
+  }
+
+  const btnUrg = document.getElementById('btnSortUrg');
+  if (btnUrg) {
+    const ativo = _ordemLista === 'asc' || _ordemLista === 'desc';
+    btnUrg.classList.toggle('ativo', ativo);
+    const sub = document.getElementById('subUrg');
+    if (sub) sub.innerHTML = _ordemLista === 'desc' ? '<span class="s1">Z</span><span class="s2">→A</span>' : '<span class="s1">A</span><span class="s2">→Z</span>';
+    btnUrg.title = ativo ? (_ordemLista === 'desc' ? 'Menos urgente — clique para inverter' : 'Mais urgente — clique para inverter') : 'Ordenar por tempo';
+  }
+
+  const btnViat = document.getElementById('btnSortViat');
+  if (btnViat) {
+    const ativo = _ordemLista === 'viatA' || _ordemLista === 'viatZ';
+    btnViat.classList.toggle('ativo', ativo);
+    const sub = document.getElementById('subViat');
+    if (sub) sub.innerHTML = _ordemLista === 'viatZ' ? '<span class="s1">Z</span><span class="s2">→A</span>' : '<span class="s1">A</span><span class="s2">→Z</span>';
+    btnViat.title = ativo ? (_ordemLista === 'viatZ' ? 'Viatura Z→A — clique para A→Z' : 'Viatura A→Z — clique para Z→A') : 'Ordenar por viatura';
+  }
+
+  const btnCirc = document.getElementById('btnSortCirc');
+  if (btnCirc) {
+    const ativo = _ordemLista === 'circA' || _ordemLista === 'circZ';
+    btnCirc.classList.toggle('ativo', ativo);
+    const sub = document.getElementById('subCirc');
+    if (sub) sub.innerHTML = _ordemLista === 'circZ' ? '<span class="s1">Z</span><span class="s2">→A</span>' : '<span class="s1">A</span><span class="s2">→Z</span>';
+    btnCirc.title = ativo ? (_ordemLista === 'circZ' ? 'Alimentador Z→A — clique para A→Z' : 'Alimentador A→Z — clique para Z→A') : 'Ordenar por alimentador';
+  }
+
+  atualizarBtnLimparOrdem();
+  if (!_listaAtual.length) return;
+  renderizarResultados(_listaAtual);
+}
+
+function atualizarBtnLimparOrdem() {
+  const btn = document.getElementById('btnLimparOrdem');
+  if (!btn) return;
+  const temAlgo = !!_ordemLista || _filtroVital;
+  btn.style.display = temAlgo ? '' : 'none';
+}
+
+function limparOrdemEFiltros() {
+  _ordemLista = null;
+  _filtroVital = false;
+  const btnEnd = document.getElementById('btnSortEnd');
+  if (btnEnd) { btnEnd.classList.remove('ativo'); const s=document.getElementById('subEnd'); if(s) s.innerHTML='<span class="s1">A</span><span class="s2">→Z</span>'; btnEnd.title='Ordenar por endereço'; }
+  const btnUrg = document.getElementById('btnSortUrg');
+  if (btnUrg) { btnUrg.classList.remove('ativo'); const s=document.getElementById('subUrg'); if(s) s.innerHTML='<span class="s1">A</span><span class="s2">→Z</span>'; btnUrg.title='Ordenar por tempo'; }
+  const btnViat = document.getElementById('btnSortViat');
+  if (btnViat) { btnViat.classList.remove('ativo'); const s=document.getElementById('subViat'); if(s) s.innerHTML='<span class="s1">A</span><span class="s2">→Z</span>'; btnViat.title='Ordenar por viatura'; }
+  const btnCirc = document.getElementById('btnSortCirc');
+  if (btnCirc) { btnCirc.classList.remove('ativo'); const s=document.getElementById('subCirc'); if(s) s.innerHTML='<span class="s1">A</span><span class="s2">→Z</span>'; btnCirc.title='Ordenar por alimentador'; }
+  const btnVital = document.getElementById('btnFiltroVital');
+  if (btnVital) btnVital.classList.remove('ativo');
+  document.getElementById('btnLimparOrdem').style.display = 'none';
+  if (!_listaAtual.length) return;
+  renderizarResultados(_listaAtual);
+}
+
+function _aplicarOrdem(lista) {
+  if (!_ordemLista) return lista;
+  // Ordenação por endereço
+  if (_ordemLista === 'endA' || _ordemLista === 'endZ') {
+    return [...lista].sort((a, b) => {
+      const eA = (a.Endereco||'').trim().toUpperCase();
+      const eB = (b.Endereco||'').trim().toUpperCase();
+      return _ordemLista === 'endA' ? eA.localeCompare(eB) : eB.localeCompare(eA);
+    });
+  }
+  // Ordenação por viatura (formato XXX-YY-NNL ex: DMA-SG-01B) — sem viatura sempre no final
+  if (_ordemLista === 'viatA' || _ordemLista === 'viatZ') {
+    const parseViatura = (v) => {
+      if (!v || v.length < 10) return { letra: 'Z', numero: '99', sigla: 'ZZ', prefixo: 'ZZZ' };
+      return {
+        letra:   v.charAt(9)        || 'Z',
+        numero:  v.substring(7, 9)  || '99',
+        sigla:   v.substring(4, 6)  || 'ZZ',
+        prefixo: v.substring(0, 3)  || 'ZZZ',
+      };
+    };
+    const asc = _ordemLista === 'viatA';
+    return [...lista].sort((a, b) => {
+      const vA = (a.Viatura||'').trim().toUpperCase();
+      const vB = (b.Viatura||'').trim().toUpperCase();
+      // Sem viatura sempre no final
+      const semA = !vA || vA === '-';
+      const semB = !vB || vB === '-';
+      if (semA && semB) return 0;
+      if (semA) return 1;
+      if (semB) return -1;
+      const pA = parseViatura(vA);
+      const pB = parseViatura(vB);
+      let cmp = pA.letra.localeCompare(pB.letra);
+      if (cmp === 0) cmp = pA.numero.localeCompare(pB.numero);
+      if (cmp === 0) cmp = pA.sigla.localeCompare(pB.sigla);
+      if (cmp === 0) cmp = pA.prefixo.localeCompare(pB.prefixo);
+      return asc ? cmp : -cmp;
+    });
+  }
+  // Ordenação por circuito
+  if (_ordemLista === 'circA' || _ordemLista === 'circZ') {
+    return [...lista].sort((a, b) => {
+      const cA = (a.Circuito||'').trim().toUpperCase();
+      const cB = (b.Circuito||'').trim().toUpperCase();
+      return _ordemLista === 'circA' ? cA.localeCompare(cB) : cB.localeCompare(cA);
+    });
+  }
+  // Ordenação por tempo restante
+  const decorridos = _cargaTimestamp ? Math.floor((Date.now() - _cargaTimestamp) / 1000) : 0;
+  const PRAZO = 24 * 3600;
+  const comTempo = lista.map(item => {
+    const seg = parseDuracaoSeg(item.Duracao);
+    const rest = seg !== null ? PRAZO - (seg + decorridos) : Infinity;
+    return { item, rest };
+  });
+  comTempo.sort((a, b) => _ordemLista === 'asc' ? a.rest - b.rest : b.rest - a.rest);
+  return comTempo.map(x => x.item);
+}
+function normalizar(v) { return String(v||'').trim().replace(/^0+/,'').toUpperCase(); }
+function normEnd(v)    { return String(v||'').trim().toUpperCase(); }
+
+let _areasSelecionadas = new Set(); // áreas de despacho ativas no filtro
+
+// ── popular dropdown com áreas extraídas dos dados
+function sincronizarAlturaAreasCard() {
+  const cardBusca = document.querySelector('.busca-com-painel .card');
+  const cardAreas = document.getElementById('areasAtivasCard');
+  if (cardBusca && cardAreas && cardAreas.classList.contains('visivel')) {
+    cardAreas.style.height = cardBusca.offsetHeight + 'px';
+  }
+}
+
+function popularAreaDropdown() {
+  const contagem = {};
+  dadosCarregados.forEach(item => {
+    const a = (item.Area_Despacho||'').trim().toUpperCase();
+    if (a) contagem[a] = (contagem[a]||0) + 1;
+  });
+  const areas = Object.keys(contagem).sort();
+  const wrap = document.getElementById('areaFiltroWrap');
+  if (!areas.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  renderizarOpcoesArea(areas, contagem);
+  atualizarMiniCard();
+}
+
+function renderizarOpcoesArea(areas, contagem) {
+  const cont = document.getElementById('areaOpcoes');
+  cont.innerHTML = '';
+  areas.forEach(area => {
+    const opt = document.createElement('div');
+    opt.className = 'area-option' + (_areasSelecionadas.has(area) ? ' selecionada' : '');
+    opt.dataset.area = area;
+    opt.innerHTML = `
+      <input type="checkbox" ${_areasSelecionadas.has(area)?'checked':''}>
+      <span>${area}</span>
+      <span class="area-option-qtd">${contagem ? (contagem[area]||'') : ''}</span>`;
+
+    const aplicar = (e) => {
+      e.stopPropagation();
+      const cb = opt.querySelector('input[type=checkbox]');
+      if (e.target !== cb) cb.checked = !cb.checked;
+      if (cb.checked) _areasSelecionadas.add(area);
+      else _areasSelecionadas.delete(area);
+      opt.classList.toggle('selecionada', cb.checked);
+      atualizarChipsArea();
+      buscar();
+    };
+
+    opt.onclick = aplicar;
+    opt.querySelector('input').onchange = aplicar;
+    cont.appendChild(opt);
+  });
+}
+
+function filtrarOpcoesArea() {
+  const q = document.getElementById('areaSearchInput').value.trim().toUpperCase();
+  document.querySelectorAll('.area-option').forEach(opt => {
+    opt.style.display = opt.dataset.area.includes(q) ? '' : 'none';
+  });
+}
+
+function atualizarChipsArea() {
+  // Persistir seleção de áreas
+  try { localStorage.setItem(STORAGE_KEY_AREAS, JSON.stringify([..._areasSelecionadas])); } catch(e) {}
+
+  const box = document.getElementById('areaFiltroBox');
+  const ph  = document.getElementById('areaPlaceholder');
+
+  // Remover chips existentes (não mostrar mais na caixinha)
+  box.querySelectorAll('.area-chip, .area-chip-extra').forEach(c => c.remove());
+
+  // Mostrar placeholder com contagem ou "TODAS AS ÁREAS"
+  ph.style.display = '';
+  if (_areasSelecionadas.size === 0) {
+    ph.textContent = 'TODAS AS ÁREAS';
+  } else {
+    ph.textContent = `${_areasSelecionadas.size} SELECIONADA${_areasSelecionadas.size > 1 ? 'S' : ''}`;
+  }
+
+  atualizarMiniCard();
+}
+
+// Offset de scroll dos chips da faixa
+let _areasNavOffset = 0;
+
+function atualizarMiniCard() {
+  const chips   = document.getElementById('areasAtivasFaixaChips');
+  const vazia   = document.getElementById('areasAtivasFaixaVazia');
+  if (!chips) return;
+
+  // Limpar chips anteriores (mantém o span vazia)
+  [...chips.children].forEach(c => { if (c !== vazia) c.remove(); });
+  _areasNavOffset = 0;
+
+  if (!dadosCarregados.length || _areasSelecionadas.size === 0) {
+    if (vazia) vazia.style.display = '';
+    atualizarNavBtns();
+    return;
+  }
+
+  if (vazia) vazia.style.display = 'none';
+
+  const contagem = {};
+  dadosCarregados.forEach(item => {
+    const a = (item.Area_Despacho||'').trim().toUpperCase();
+    if (a) contagem[a] = (contagem[a]||0) + 1;
+  });
+
+  [..._areasSelecionadas].sort().forEach(area => {
+    const qtd = contagem[area] || 0;
+    const chip = document.createElement('div');
+    chip.className = 'area-chip-faixa';
+    chip.dataset.area = area;
+    chip.innerHTML = `
+      <span>${area}</span>
+      <span class="area-chip-faixa-qtd">${qtd}</span>
+      <span class="area-chip-faixa-x" onclick="removerAreaChip(event,'${area.replace(/'/g,"\\'")}')">✕</span>`;
+    chips.appendChild(chip);
+  });
+
+  atualizarNavBtns();
+}
+
+function navAreasDir() {
+  const chips = document.getElementById('areasAtivasFaixaChips');
+  if (!chips) return;
+  const chipEls = [...chips.querySelectorAll('.area-chip-faixa')];
+  if (_areasNavOffset + 1 < chipEls.length) {
+    _areasNavOffset++;
+    chipEls.forEach((c, i) => c.style.display = i < _areasNavOffset ? 'none' : '');
+  }
+  atualizarNavBtns();
+}
+
+function navAreasEsq() {
+  const chips = document.getElementById('areasAtivasFaixaChips');
+  if (!chips) return;
+  if (_areasNavOffset > 0) {
+    _areasNavOffset--;
+    const chipEls = [...chips.querySelectorAll('.area-chip-faixa')];
+    chipEls.forEach((c, i) => c.style.display = i < _areasNavOffset ? 'none' : '');
+  }
+  atualizarNavBtns();
+}
+
+function atualizarNavBtns() {
+  const chips   = document.getElementById('areasAtivasFaixaChips');
+  const btnEsq  = document.getElementById('btnNavEsq');
+  const btnDir  = document.getElementById('btnNavDir');
+  if (!chips || !btnEsq || !btnDir) return;
+  const total = chips.querySelectorAll('.area-chip-faixa').length;
+  btnEsq.disabled = _areasNavOffset === 0;
+  btnDir.disabled = _areasNavOffset >= total - 1 || total === 0;
+}
+
+function removerAreaChip(e, area) {
+  e.stopPropagation();
+  _areasSelecionadas.delete(area);
+  // desmarcar checkbox correspondente
+  document.querySelectorAll('.area-option').forEach(opt => {
+    if (opt.dataset.area === area) {
+      opt.querySelector('input[type=checkbox]').checked = false;
+      opt.classList.remove('selecionada');
+    }
+  });
+  atualizarChipsArea();
+  buscar();
+}
+
+function limparAreasDespacho() {
+  _areasSelecionadas.clear();
+  document.querySelectorAll('.area-option').forEach(opt => {
+    opt.querySelector('input[type=checkbox]').checked = false;
+    opt.classList.remove('selecionada');
+  });
+  atualizarChipsArea();
+  fecharAreaDropdown();
+  buscar();
+}
+
+// ══════════════════════════════════════════════
+//  DROPDOWN DE VIATURA
+// ══════════════════════════════════════════════
+function popularViaturaDropdown(listaFiltrada) {
+  const wrap = document.getElementById('viaturaFiltroWrap');
+  const opcoes = document.getElementById('viaturaOpcoes');
+  if (!wrap || !opcoes) return;
+
+  // Contar viaturas na lista filtrada atual
+  const fonte = listaFiltrada || dadosCarregados;
+  const contagem = {};
+  fonte.forEach(item => {
+    const v = (item.Viatura||'').trim().toUpperCase();
+    if (v && v !== '-') contagem[v] = (contagem[v]||0) + 1;
+  });
+
+  const viaturas = Object.keys(contagem).sort();
+
+  // Só oculta se nunca houve dados — não oculta quando filtro não bate
+  if (!dadosCarregados.length) { wrap.style.display = 'none'; return; }
+  // Manter visível sempre que dados carregados existem
+  wrap.style.display = '';
+
+  opcoes.innerHTML = '';
+  viaturas.forEach(v => {
+    const div = document.createElement('div');
+    div.className = 'area-option' + (_viaturasSelecionadas.has(v) ? ' selecionada' : '');
+    div.dataset.viatura = v;
+    div.innerHTML = `<input type="checkbox" ${_viaturasSelecionadas.has(v)?'checked':''}><span>${v}</span><span class="area-option-qtd">${contagem[v]}</span>`;
+
+    const aplicar = (e) => {
+      e.stopPropagation();
+      const cb = div.querySelector('input[type=checkbox]');
+      if (e.target !== cb) cb.checked = !cb.checked;
+      if (cb.checked) { _viaturasSelecionadas.add(v); div.classList.add('selecionada'); }
+      else { _viaturasSelecionadas.delete(v); div.classList.remove('selecionada'); }
+      atualizarChipsViatura();
+      // Buscar sem reconstruir o dropdown (para permitir múltipla seleção)
+      buscarSemReconstruirViatura();
+    };
+
+    div.onclick = aplicar;
+    div.querySelector('input').onchange = aplicar;
+    opcoes.appendChild(div);
+  });
+
+  // Se viatura selecionada não existe mais na lista, mantém mas sem contagem
+  _viaturasSelecionadas.forEach(v => {
+    if (!contagem[v]) {
+      const div = document.createElement('div');
+      div.className = 'area-option selecionada';
+      div.dataset.viatura = v;
+      div.innerHTML = `<input type="checkbox" checked><span>${v}</span><span class="area-option-qtd" style="background:#999;">0</span>`;
+      div.onclick = (e) => { e.stopPropagation(); toggleViatura(v, div); };
+      div.querySelector('input').onclick = e => e.stopPropagation();
+      opcoes.appendChild(div);
+    }
+  });
+}
+
+function toggleViatura(v, el) {
+  if (_viaturasSelecionadas.has(v)) {
+    _viaturasSelecionadas.delete(v);
+    el.classList.remove('selecionada');
+    el.querySelector('input').checked = false;
+  } else {
+    _viaturasSelecionadas.add(v);
+    el.classList.add('selecionada');
+    el.querySelector('input').checked = true;
+  }
+  atualizarChipsViatura();
+  buscar();
+}
+
+function atualizarChipsViatura() {
+  const box = document.getElementById('viaturaFiltroBox');
+  const ph  = document.getElementById('viaturaPlaceholder');
+  if (!box || !ph) return;
+  box.querySelectorAll('.area-chip, .area-chip-extra').forEach(c => c.remove());
+  ph.style.display = '';
+  if (_viaturasSelecionadas.size === 0) {
+    ph.textContent = 'TODAS AS VIATURAS';
+  } else {
+    ph.textContent = `${_viaturasSelecionadas.size} VIATURA${_viaturasSelecionadas.size > 1 ? 'S' : ''}`;
+  }
+}
+
+function removerViaturaChip(e, v) {
+  e.stopPropagation();
+  _viaturasSelecionadas.delete(v.trim().toUpperCase());
+  document.querySelectorAll('.area-option[data-viatura]').forEach(opt => {
+    if (opt.dataset.viatura === v.trim().toUpperCase()) {
+      opt.classList.remove('selecionada');
+      opt.querySelector('input').checked = false;
+    }
+  });
+  atualizarChipsViatura();
+  buscar();
+}
+
+function selecionarTodasViaturas() {
+  document.querySelectorAll('#viaturaOpcoes .area-option').forEach(opt => {
+    if (opt.style.display === 'none') return;
+    const v = opt.dataset.viatura;
+    if (!v) return;
+    _viaturasSelecionadas.add(v);
+    const cb = opt.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = true;
+    opt.classList.add('selecionada');
+  });
+  atualizarChipsViatura();
+  fecharViaturaDropdown();
+  buscar();
+}
+
+function limparViatura() {
+  _viaturasSelecionadas.clear();
+  atualizarChipsViatura();
+  fecharViaturaDropdown();
+  buscar();
+}
+
+function filtrarOpcoesViatura() {
+  const q = document.getElementById('viaturaSearchInput')?.value.toUpperCase() || '';
+  document.querySelectorAll('#viaturaOpcoes .area-option').forEach(opt => {
+    opt.style.display = opt.dataset.viatura?.includes(q) ? '' : 'none';
+  });
+}
+
+function toggleViaturaDropdown(e) {
+  e.stopPropagation();
+  const drop = document.getElementById('viaturaDropdown');
+  const box  = document.getElementById('viaturaFiltroBox');
+  const arr  = document.getElementById('viaturaArrow');
+  const jaAberta = drop.classList.contains('aberta');
+  if (jaAberta) { fecharViaturaDropdown(); return; }
+  fecharAreaDropdown();
+  const rect = box.getBoundingClientRect();
+  const spaceAbaixo = window.innerHeight - rect.bottom;
+  const spaceAcima  = rect.top;
+  drop.style.left  = rect.left + 'px';
+  drop.style.width = Math.max(rect.width, 200) + 'px';
+  if (spaceAbaixo >= 200 || spaceAbaixo >= spaceAcima) {
+    drop.style.top = (rect.bottom + 4) + 'px'; drop.style.bottom = 'auto';
+  } else {
+    drop.style.bottom = (window.innerHeight - rect.top + 4) + 'px'; drop.style.top = 'auto';
+  }
+  drop.classList.add('aberta');
+  box.classList.add('aberta');
+  arr.classList.add('aberta');
+  setTimeout(() => document.getElementById('viaturaSearchInput')?.focus(), 50);
+}
+
+function fecharViaturaDropdown() {
+  document.getElementById('viaturaDropdown')?.classList.remove('aberta');
+  document.getElementById('viaturaFiltroBox')?.classList.remove('aberta');
+  document.getElementById('viaturaArrow')?.classList.remove('aberta');
+}
+
+// Fechar viatura ao clicar fora
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('viaturaFiltroWrap');
+  const drop = document.getElementById('viaturaDropdown');
+  if (!wrap?.contains(e.target) && !drop?.contains(e.target)) fecharViaturaDropdown();
+});
+
+function toggleAreaDropdown(e) {
+  e.stopPropagation();
+  const drop = document.getElementById('areaDropdown');
+  const box  = document.getElementById('areaFiltroBox');
+  const arr  = document.getElementById('areaArrow');
+  const jaAberta = drop.classList.contains('aberta');
+
+  if (jaAberta) {
+    fecharAreaDropdown();
+    return;
+  }
+
+  // Calcular posição abaixo do box
+  const rect = box.getBoundingClientRect();
+  const dropH = 260; // max-height estimada
+  const spaceAbaixo = window.innerHeight - rect.bottom;
+  const spaceAcima  = rect.top;
+
+  drop.style.width = rect.width + 'px';
+  drop.style.left  = rect.left + 'px';
+
+  if (spaceAbaixo >= Math.min(dropH, 200) || spaceAbaixo >= spaceAcima) {
+    // Abre para baixo
+    drop.style.top    = (rect.bottom + 4) + 'px';
+    drop.style.bottom = 'auto';
+  } else {
+    // Abre para cima
+    drop.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+    drop.style.top    = 'auto';
+  }
+
+  drop.classList.add('aberta');
+  box.classList.add('aberta');
+  arr.classList.add('aberta');
+  document.getElementById('areaSearchInput').value = '';
+  filtrarOpcoesArea();
+  document.getElementById('areaSearchInput').focus();
+}
+function fecharAreaDropdown() {
+  document.getElementById('areaDropdown').classList.remove('aberta');
+  document.getElementById('areaFiltroBox').classList.remove('aberta');
+  document.getElementById('areaArrow').classList.remove('aberta');
+}
+// fechar ao clicar fora
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('areaFiltroWrap');
+  const drop = document.getElementById('areaDropdown');
+  if (!wrap?.contains(e.target) && !drop?.contains(e.target)) fecharAreaDropdown();
+});
+// reposicionar em scroll ou resize
+window.addEventListener('scroll', () => {
+  if (document.getElementById('areaDropdown')?.classList.contains('aberta')) {
+    const rect = document.getElementById('areaFiltroBox').getBoundingClientRect();
+    const drop = document.getElementById('areaDropdown');
+    const spaceAbaixo = window.innerHeight - rect.bottom;
+    const spaceAcima  = rect.top;
+    drop.style.left  = rect.left + 'px';
+    drop.style.width = rect.width + 'px';
+    if (spaceAbaixo >= Math.min(260, 200) || spaceAbaixo >= spaceAcima) {
+      drop.style.top = (rect.bottom + 4) + 'px'; drop.style.bottom = 'auto';
+    } else {
+      drop.style.bottom = (window.innerHeight - rect.top + 4) + 'px'; drop.style.top = 'auto';
+    }
+  }
+}, true);
+window.addEventListener('resize', fecharAreaDropdown);
+
+function buscarSemReconstruirViatura() {
+  if (!dadosCarregados.length) return;
+  const tI  = normalizar(document.getElementById('inputIncidencia').value);
+  const tC  = normalizar(document.getElementById('inputCliente').value);
+  const tM  = normalizar(document.getElementById('inputMedidor').value);
+  const tE  = normEnd(document.getElementById('inputEndereco').value);
+  const tN  = normEnd(document.getElementById('inputNomeCliente')?.value || '');
+  const tCi = normEnd(document.getElementById('inputCircuito')?.value || '');
+  const semFiltro = !tI && !tC && !tM && !tE && !tN && !tCi && _areasSelecionadas.size === 0 && _viaturasSelecionadas.size === 0 && !_filtroVital;
+  const res = semFiltro ? dadosCarregados : dadosCarregados.filter(item => {
+    let ok = true;
+    if (tI)  ok = ok && normalizar(item.Num_Incidencia||'').includes(tI);
+    if (tC)  ok = ok && normalizar(item.Num_Cliente   ||'').includes(tC);
+    if (tM)  ok = ok && normalizar(item.Medidor       ||'').includes(tM);
+    if (tE)  ok = ok && normEnd(item.Endereco         ||'').includes(tE);
+    if (tN)  ok = ok && normEnd(item.Cliente          ||'').includes(tN);
+    if (tCi) ok = ok && normEnd(item.Circuito         ||'').includes(tCi);
+    if (_areasSelecionadas.size > 0)
+      ok = ok && _areasSelecionadas.has((item.Area_Despacho||'').trim().toUpperCase());
+    if (_viaturasSelecionadas.size > 0)
+      ok = ok && _viaturasSelecionadas.has((item.Viatura||'').trim().toUpperCase());
+    if (_filtroVital) ok = ok && isVital(item);
+    return ok;
+  });
+  renderizarResultados(res);
+  // NÃO reconstruir viaturaDropdown — deixar aberto para múltipla seleção
+  atualizarBtnLimpar();
+}
+
+function buscarAuto() {
+  if (!dadosCarregados.length) return;
+  buscar();
+}
+
+// mantida para compatibilidade
+function buscaAutomatica() { buscarAuto(); }
+
+function buscar() {
+  if (!dadosCarregados.length) return;
+
+  const tI  = normalizar(document.getElementById('inputIncidencia').value);
+  const tC  = normalizar(document.getElementById('inputCliente').value);
+  const tM  = normalizar(document.getElementById('inputMedidor').value);
+  const tE  = normEnd(document.getElementById('inputEndereco').value);
+  const tN  = normEnd(document.getElementById('inputNomeCliente')?.value || '');
+  const tCi = normEnd(document.getElementById('inputCircuito')?.value || '');
+  const semFiltro = !tI && !tC && !tM && !tE && !tN && !tCi && _areasSelecionadas.size === 0 && _viaturasSelecionadas.size === 0 && !_filtroVital;
+
+  const res = semFiltro ? dadosCarregados : dadosCarregados.filter(item => {
+    let ok = true;
+    if (tI)  ok = ok && normalizar(item.Num_Incidencia||'').includes(tI);
+    if (tC)  ok = ok && normalizar(item.Num_Cliente   ||'').includes(tC);
+    if (tM)  ok = ok && normalizar(item.Medidor       ||'').includes(tM);
+    if (tE)  ok = ok && normEnd(item.Endereco         ||'').includes(tE);
+    if (tN)  ok = ok && normEnd(item.Cliente          ||'').includes(tN);
+    if (tCi) ok = ok && normEnd(item.Circuito         ||'').includes(tCi);
+    if (_areasSelecionadas.size > 0)
+      ok = ok && _areasSelecionadas.has((item.Area_Despacho||'').trim().toUpperCase());
+    if (_viaturasSelecionadas.size > 0)
+      ok = ok && _viaturasSelecionadas.has((item.Viatura||'').trim().toUpperCase());
+    if (_filtroVital) ok = ok && isVital(item);
+    return ok;
+  });
+  renderizarResultados(res);
+  popularViaturaDropdown(res);
+  atualizarBtnLimpar();
+}
+
+function selecionarTodasAreas() {
+  const q = (document.getElementById('areaSearchInput')?.value || '').trim();
+  // Com texto → seleciona só as visíveis; sem texto → seleciona todas
+  document.querySelectorAll('#areaOpcoes .area-option').forEach(opt => {
+    if (opt.style.display === 'none') return; // pula as ocultas pelo filtro
+    const area = opt.dataset.area;
+    if (!area) return;
+    _areasSelecionadas.add(area);
+    const cb = opt.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = true;
+    opt.classList.add('selecionada');
+  });
+  atualizarChipsArea();
+  fecharAreaDropdown();
+  buscar();
+}
+
+// ══════════════════════════════════════════════
+//  RENDERIZAR LISTA
+// ══════════════════════════════════════════════
+function renderizarResultados(lista) {
+  const sidebar = document.getElementById('sidebarLista'); // já está no workspace
+  const ws      = document.getElementById('workspace');
+  const cont    = document.getElementById('listaResultados');
+  const qtd     = document.getElementById('qtdResultados');
+
+  document.getElementById('cardDetalhe').style.display  = 'none';
+  document.getElementById('acoesBarra').style.display   = 'none';
+  document.getElementById('detalheVazio').style.display = 'flex';
+  incidenciaSelecionada = null;
+  ws.style.display = 'grid';
+
+  // Limpa timers da lista anterior
+  _listaTimers = [];
+  // Salva lista para reordenação sem nova busca
+  _listaAtual = lista;
+  // Aplica ordenação se ativa
+  const listaOrdenada = _aplicarOrdem([...lista]);
+
+  cont.innerHTML = '';
+  if (!listaOrdenada.length) {
+    cont.innerHTML = `<div class="empty-state"><div class="ei">🔎</div><p>NENHUMA INCIDÊNCIA ENCONTRADA.</p></div>`;
+    qtd.textContent = '0 INCIDÊNCIAS';
+    return;
+  }
+  qtd.textContent = listaOrdenada.length + ' INCIDÊNCIA' + (listaOrdenada.length !== 1 ? 'S' : '');
+
+  listaOrdenada.forEach(item => {
+    const div   = document.createElement('div');
+    div.className = 'resultado-item';
+    div.onclick   = () => selecionarIncidencia(item, div);
+    const nivel  = (item.Nivel_Tensao||'').toUpperCase();
+    const estado = (item.Estado||'').toUpperCase();
+    const segNaCarga = parseDuracaoSeg(item.Duracao);
+    const temTempo   = segNaCarga !== null;
+
+    const vital = isVital(item);
+
+    div.innerHTML = `
+      <div class="res-linha-topo">
+        <div class="res-inc">${item.Num_Incidencia||''}${vital?'<img src="icon_vital.png" class="res-icon-vital" title="Cliente vital">':''}</div>
+        ${temTempo ? `<span class="res-tempo verde" data-inc="${item.Num_Incidencia||''}">⏳</span>` : ''}
+      </div>
+      <div class="res-linha-end">
+        ${item.Endereco?`<div class="res-endereco"><span>📍</span><span class="res-endereco-txt">${String(item.Endereco).toUpperCase()}</span></div>`:'<div style="flex:1;"></div>'}
+        ${item.Tipo_Reclamacao?`<div class="res-tipo-rec">${item.Tipo_Reclamacao}</div>`:''}
+      </div>
+      <div class="res-linha-badges">
+        <span class="res-tipo ${nivel==='MT'?'mt':'bt'}">${nivel||'BT'}</span>
+        ${item.Area_Despacho?`<span class="res-tipo recebida">${item.Area_Despacho}</span>`:''}
+        ${item.Circuito?`<span class="res-tipo circuito">⚡${item.Circuito}</span>`:''}
+      </div>
+      ${item.Viatura?`<div class="res-viatura"><img src="icon_viatura.png" class="res-icon-viatura">${item.Viatura}</div>`:''}`;
+
+
+    cont.appendChild(div);
+
+    // Registrar badge para atualização ao vivo
+    if (temTempo) {
+      const spanEl = div.querySelector(`[data-inc="${item.Num_Incidencia||''}"]`);
+      if (spanEl) _listaTimers.push({ segNaCarga, spanEl });
+    }
+  });
+
+  // Tick imediato para mostrar valores corretos sem esperar 1s
+  _tickGlobal();
+
+  if (listaOrdenada.length===1) selecionarIncidencia(listaOrdenada[0], cont.querySelector('.resultado-item'));
+}
+
+// ══════════════════════════════════════════════
+//  SELECIONAR → reseta tudo
+// ══════════════════════════════════════════════
+function selecionarIncidencia(item, el) {
+  document.querySelectorAll('.resultado-item').forEach(d => d.classList.remove('selecionado'));
+  el.classList.add('selecionado');
+  incidenciaSelecionada = item;
+  // flagPrioridade mantido — comportamento global persistente
+  modoEdicao      = false;
+  edicaoManual    = {};
+  atualizarBotoesToggle();
+  renderizarDetalhe(item);
+  sairModoEdicao(false);
+  renderizarPrevia();
+  irParaAba('previa');
+}
+
+// ══════════════════════════════════════════════
+//  DURAÇÃO / SEMÁFORO
+// ══════════════════════════════════════════════
+function parseDuracaoHoras(s) {
+  if (!s) return null;
+  const p = String(s).trim().split(':');
+  return p.length>=2 ? (parseInt(p[0])||0)+(parseInt(p[1])||0)/60 : null;
+}
+// Converte string "HH:MM" em segundos totais
+function parseDuracaoSeg(s) {
+  if (!s) return null;
+  const p = String(s).trim().split(':');
+  if (p.length < 2) return null;
+  return (parseInt(p[0])||0)*3600 + (parseInt(p[1])||0)*60;
+}
+function semaforo(h) {
+  if (h===null) return null;
+  return h<12?'verde': h<24?'amarelo':'vermelho';
+}
+function faltandoStr(h) {
+  if (h===null||h>=24) return null;
+  const f=24-h, fH=Math.floor(f), fM=Math.round((f-fH)*60);
+  return fH>0&&fM>0?`${fH}h ${fM}min`: fH>0?`${fH}h`:`${fM}min`;
+}
+
+// Calcula tempo restante REAL somando o tempo decorrido desde a carga
+function calcularRestanteReal(duracaoStr) {
+  const segNaCarga = parseDuracaoSeg(duracaoStr);
+  if (segNaCarga === null) return { str: null, sem: null };
+
+  const decorridos = _cargaTimestamp ? Math.floor((Date.now() - _cargaTimestamp) / 1000) : 0;
+  const PRAZO = 24 * 3600;
+  const segAtual = segNaCarga + decorridos;
+  const segRest  = PRAZO - segAtual;
+
+  const semStr = segRest > 12*3600 ? 'verde' : segRest > 0 ? 'amarelo' : 'vermelho';
+
+  if (segRest <= 0) {
+    const over = Math.abs(segRest);
+    const h = Math.floor(over/3600), m = Math.floor((over%3600)/60), s = over%60;
+    return { str: `FORA DO PRAZO +${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`, sem: 'vermelho' };
+  }
+  const h = Math.floor(segRest/3600);
+  const m = Math.floor((segRest%3600)/60);
+  const s = segRest%60;
+  let txt = '';
+  if (h>0) txt += `${h}h `;
+  if (h>0||m>0) txt += `${String(m).padStart(2,'0')}m `;
+  txt += `${String(s).padStart(2,'0')}s`;
+  return { str: txt.trim(), sem: semStr };
+}
+
+// Formata segundos restantes → "Xh XXm XXs" ou "VENCIDA +HH:MM:SS"
+function formatarRestante(segRestantes) {
+  if (segRestantes <= 0) {
+    const over = Math.abs(segRestantes);
+    const h = Math.floor(over/3600), m = Math.floor((over%3600)/60), s = over%60;
+    return { txt: `VENCIDA +${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`, vencida: true };
+  }
+  const h = Math.floor(segRestantes/3600);
+  const m = Math.floor((segRestantes%3600)/60);
+  const s = segRestantes%60;
+  let txt = '';
+  if (h>0) txt += `${h}h `;
+  if (h>0||m>0) txt += `${String(m).padStart(2,'0')}m `;
+  txt += `${String(s).padStart(2,'0')}s`;
+  return { txt: txt.trim(), vencida: false };
+}
+
+// ══════════════════════════════════════════════
+//  RENDERIZAR DETALHE (card limpo)
+// ══════════════════════════════════════════════
+function renderizarDetalhe(item) {
+  // Limpa timers do card anterior
+  _liveTimers = {};
+
+  document.getElementById('detalheEstadoBadge').textContent = (item.Estado||'').toUpperCase();
+  const grid = document.getElementById('detalheGrid');
+
+  const h   = parseDuracaoHoras(item.Duracao);
+  const sem = semaforo(h);
+  const fat = faltandoStr(h);
+  const totalAvisos = parseInt(item.Total_Avisos)||0;
+
+  const CAMPOS = [
+    { label:'Nº INCIDÊNCIA',       val:item.Num_Incidencia,      destaque:true,      cfg:'cfg_incidencia' },
+    { label:'CLIENTE',             val:item.Cliente,                                  cfg:'cfg_cliente' },
+    { label:'Nº CLIENTE',          val:item.Num_Cliente,                              cfg:'cfg_num_cliente' },
+    { label:'MEDIDOR',             val:item.Medidor,                                  cfg:'cfg_medidor' },
+    { label:'ÁREA DE DESPACHO',    val:item.Area_Despacho,                            cfg:'cfg_area' },
+    { label:'VIATURA',             val:item.Viatura,             vermelho:true,        cfg:'cfg_viatura' },
+    { label:'CIRCUITO',            val:item.Circuito,                                 cfg:'cfg_circuito' },
+    { label:'PONTO ELÉTRICO',      val:item.Ponto_Eletrico,                           cfg:'cfg_ponto_el' },
+    { label:'TIPO RECLAMAÇÃO',     val:item.Tipo_Reclamacao,     full:true,            cfg:'cfg_tipo' },
+    { label:'ENDEREÇO',            val:item.Endereco,            full:true,            cfg:'cfg_endereco' },
+    { label:'PONTO DE REFERÊNCIA', val:item.Ponto_de_Referencia, full:true,           cfg:'cfg_referencia' },
+    { label:'NÍVEL TENSÃO',        val:item.Nivel_Tensao,                             cfg:'cfg_nivel' },
+    { label:'TIPO DE REDE',        val:item.Tipo_de_Rede,                             cfg:'cfg_rede' },
+    { label:'ESTADO',              val:item.Estado,                                   cfg:'cfg_estado' },
+    { label:'DURAÇÃO',             val:item.Duracao,             sem:sem, fat:fat,     cfg:'cfg_duracao', liveItem: item },
+    { label:'CLIENTES AFETADOS',   val:item.Clientes,                                 cfg:'cfg_clientes_af' },
+    { label:'TOTAL AVISOS',        val:item.Total_Avisos,        avisos:totalAvisos>1, cfg:'cfg_avisos' },
+    { label:'CONSUMO (CONSH)',     val:item.Consh },
+    { label:'TELEFONE 1',          val:item.Telefone_1,                               cfg:'cfg_tel1' },
+    { label:'TELEFONE 2',          val:item.Telefone_2,                               cfg:'cfg_tel2' },
+    { label:'OBS. CLIENTE',        val:item.Observacao_Cliente,  full:true,            cfg:'cfg_comentario' },
+  ];
+
+  grid.innerHTML = '';
+  const pendentesTimer = []; // acumula { incNum, seg } para registrar após inserir tudo no DOM
+
+  CAMPOS.forEach(c => {
+    if (!c.val && c.val!==0) return;
+    const cfgEl  = c.cfg ? document.getElementById(c.cfg) : null;
+    const visivel = cfgEl ? cfgEl.checked : true;
+
+    const div = document.createElement('div');
+    div.className = 'detalhe-campo' + (c.full?' full':'');
+    if (c.cfg) div.setAttribute('data-cfg', c.cfg);
+    div.style.display = visivel ? '' : 'none';
+
+    let html='';
+    if (c.sem) {
+      const cor = c.sem;
+      const cls = cor==='vermelho'?'vermelho': cor==='amarelo'?'amarelo-dur':'verde-dur';
+      const spanId = 'faltamSpan_' + (item.Num_Incidencia||'x').toString().replace(/\W/g,'_');
+      const segBase = parseDuracaoSeg(c.val);
+      const durLiveAttr = segBase !== null ? `id="duracaoLive" data-seg-base="${segBase}"` : '';
+      html=`<div class="dur-farol dc-value ${cls}"><span class="farol-dot farol-${cor}"></span><span ${durLiveAttr}>${String(c.val).toUpperCase()}</span><span class="faltam-live verde-bg" id="${spanId}">⏳</span></div>`;
+      if (c.liveItem) {
+        const seg = parseDuracaoSeg(c.liveItem.Duracao);
+        if (seg !== null) pendentesTimer.push({ spanId, seg });
+      }
+    } else if (c.avisos) {
+      html=`<div class="dc-value avisos-alerta">⚠ ${String(c.val).toUpperCase()} AVISOS</div>`;
+    } else {
+      const cls='dc-value'+(c.destaque?' destaque':'')+(c.vermelho?' vermelho':'');
+      html=`<div class="${cls}">${String(c.val).toUpperCase()}</div>`;
+    }
+    div.innerHTML = `<div class="dc-label">${c.label}</div>${html}`;
+    grid.appendChild(div);
+  });
+
+  // Coordenadas
+  function coordLink(c){ if(!c)return null; const p=String(c).trim().split(','); return p.length>=2?`https://www.google.com/maps?q=${p[0].trim()},${p[1].trim()}`:null; }
+  const lD = coordLink(item.Coordenada_Dispositivo);
+  const lC = coordLink(item.Coordenada_Cliente);
+  const bD = document.getElementById('btnMapaDispositivo');
+  const bC = document.getElementById('btnMapaCliente');
+  if (lD){bD.href=lD; bD.style.display='flex';} else bD.style.display='none';
+  if (lC){bC.href=lC; bC.style.display='flex';} else bC.style.display='none';
+
+  document.getElementById('cardDetalhe').style.display = 'block';
+  document.getElementById('acoesBarra').style.display  = 'flex';
+  document.getElementById('detalheVazio').style.display = 'none';
+
+  // Registrar live timers agora que todos os spans estão no DOM
+  pendentesTimer.forEach(({ spanId, seg }) => {
+    const spanEl = document.getElementById(spanId);
+    if (spanEl) registrarLiveTimer(spanId, seg, spanEl);
+  });
+  // Tick imediato para exibir valor correto sem esperar 1s
+  tickLiveTimers();
+}
+
+// ══════════════════════════════════════════════
+//  SINCRONIZAR CARD COM CONFIGS
+// ══════════════════════════════════════════════
+function sincronizarCard() {
+  document.querySelectorAll('[data-cfg]').forEach(div => {
+    const el = document.getElementById(div.getAttribute('data-cfg'));
+    div.style.display = (el&&el.checked)?'':'none';
+  });
+}
+
+// ══════════════════════════════════════════════
+//  QUANDO CHECKBOX MUDA
+// ══════════════════════════════════════════════
+function onCfgChange() {
+  salvarCfgStorage();
+  sincronizarCard();
+  if (modoEdicao) { salvarEdicaoAtual(); construirEditorStruct(); }
+  else renderizarPrevia();
+}
+
+// ══════════════════════════════════════════════
+//  TOGGLES
+// ══════════════════════════════════════════════
+function toggleDetalhes() {
+  flagDetalhes = !flagDetalhes;
+  localStorage.setItem(STORAGE_KEY_DETALHES, flagDetalhes ? '1' : '0');
+  atualizarBotoesToggle();
+  if (modoEdicao){ salvarEdicaoAtual(); construirEditorStruct(); }
+  else renderizarPrevia();
+}
+function togglePrioridade() {
+  flagPrioridade = !flagPrioridade;
+  atualizarBotoesToggle();
+  if (modoEdicao){ salvarEdicaoAtual(); construirEditorStruct(); }
+  else renderizarPrevia();
+}
+function atualizarBotoesToggle() {
+  document.getElementById('btnPrioridade').classList.toggle('ativo', flagPrioridade);
+  const btnDet = document.getElementById('btnDetalhes');
+  if (btnDet) btnDet.classList.toggle('ativo', flagDetalhes);
+}
+
+// ══════════════════════════════════════════════
+//  MONTAR LINHAS DA MENSAGEM
+//  Retorna array de objetos para texto e editor
+// ══════════════════════════════════════════════
+function montarLinhas() {
+  const item = incidenciaSelecionada;
+  if (!item) return [];
+
+  function u(v){ return v?String(v).toUpperCase():'-'; }
+  function cfg(id){ const e=document.getElementById(id); return e?e.checked:true; }
+  function coordLink(c){ if(!c)return null; const p=String(c).trim().split(','); return p.length>=2?`https://www.google.com/maps?q=${p[0].trim()},${p[1].trim()}`:null; }
+
+  const h   = parseDuracaoHoras(item.Duracao);
+  const sem = semaforo(h);
+  const fat = faltandoStr(h);
+  // Tempo restante REAL (descontado o tempo decorrido desde a carga)
+  const real = calcularRestanteReal(item.Duracao);
+  const semReal = real.sem;
+  const fatReal = real.str;
+  const lD  = coordLink(item.Coordenada_Dispositivo);
+  const lC  = coordLink(item.Coordenada_Cliente);
+
+  const linhas = [];
+
+  function add(chave, titulo, valor, minusculo) {
+    if (valor!==null && valor!==undefined && String(valor).trim()!=='')
+      linhas.push({ chave, titulo, valor: minusculo ? String(valor) : String(valor).toUpperCase() });
+  }
+
+  // helper: converte HH:MM:SS ou FORA DO PRAZO +HH:MM:SS → Xh Xm (sem segundos)
+  function tempoSemSeg(str) {
+    if (!str) return '';
+    const raw = str.replace(/^FORA DO PRAZO \+/i, '');
+    const p = raw.split(':');
+    if (p.length < 2) return raw;
+    const h = parseInt(p[0])||0, m = parseInt(p[1])||0;
+    return h > 0 ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m`;
+  }
+
+  // Tipo de reclamação calculado (usado na prioridade e nos dados serviço)
+  const totalAvisos  = parseInt(item.Total_Avisos)||0;
+  const tipoOriginal = (item.Tipo_Reclamacao||'').toUpperCase().trim();
+  const tipoFinal    = (totalAvisos > 1 && tipoOriginal === 'FALTA DE ENERGIA NO CONSUMIDOR')
+    ? 'FALTA DE ENERGIA EM VÁRIOS CONSUMIDORES' : tipoOriginal;
+  // Primeira letra maiúscula, resto minúsculo
+  const tipoDisplay  = tipoFinal.charAt(0) + tipoFinal.slice(1).toLowerCase();
+
+  // Detectar palavra "vital" em qualquer campo da incidência
+  const camposVital  = [item.Cliente, item.Comentario, item.Observacao_Cliente, item.Tipo_Reclamacao, item.Ponto_de_Referencia].join(' ');
+  const temVital     = /vital/i.test(camposVital);
+
+  // ── Bloco de prioridade no topo
+  if (flagPrioridade) {
+    const vencida     = semReal === 'vermelho';
+    const tituloBloco = vencida ? '⚡ PRIORIDADE — OCORRÊNCIA VENCIDA' : '⚡ PRIORIDADE — OCORRÊNCIA A VENCER';
+    const tempoStr    = tempoSemSeg(fatReal);
+    const labelTempo  = vencida ? 'Crítico' : 'Faltam';
+    const plural      = totalAvisos > 1 ? 'Clientes há' : 'Cliente há';
+    const valorTempo  = vencida ? `${plural} ${tempoStr} sem atendimento` : tempoStr;
+
+    linhas.push({ chave:'__prior_titulo__', tipo:'alerta-bloco', valor: tituloBloco });
+    linhas.push({ chave:'__prior_tempo__',  tipo:'alerta', titulo: labelTempo, valor: valorTempo });
+    linhas.push({ chave:'__prior_tipo__',   tipo:'alerta', titulo: 'Tipo', valor: tipoDisplay });
+    if (temVital)
+      linhas.push({ chave:'__prior_vital__', tipo:'alerta', titulo: 'Obs', valor: '⚠️ Cliente vital — equipamento essencial à vida' });
+  }
+
+  // ══ BLOCO 1: DADOS SERVIÇO ══
+  linhas.push({ chave:'__b1__', tipo:'bloco', valor:'DADOS SERVIÇO' });
+
+  if (cfg('cfg_incidencia'))  add('incidencia',  'Nº INCIDÊNCIA',    u(item.Num_Incidencia));
+  if (cfg('cfg_endereco'))    add('endereco',     'ENDEREÇO',         u(item.Endereco));
+  if (cfg('cfg_circuito') && item.Circuito)       add('circuito', 'CIRCUITO',       u(item.Circuito));
+  if (cfg('cfg_ponto_el') && item.Ponto_Eletrico) add('ponto_el', 'PONTO ELÉTRICO', u(item.Ponto_Eletrico));
+  if (cfg('cfg_cliente'))     add('cliente',      'CLIENTE',          u(item.Cliente));
+  if (cfg('cfg_medidor'))     add('medidor',      'MEDIDOR',          u(item.Medidor));
+  if (cfg('cfg_tel1'))        add('tel1',         'TELEFONE 1',       u(item.Telefone_1));
+  if (cfg('cfg_tel2'))        add('tel2',         'TELEFONE 2',       u(item.Telefone_2));
+  // TIPO RECLAMAÇÃO — só aparece em DADOS SERVIÇO quando prioridade está desativada
+  if (cfg('cfg_tipo') && !flagPrioridade) {
+    add('tipo', 'TIPO RECLAMAÇÃO', tipoFinal);
+  }
+  if (cfg('cfg_clientes_af')) add('clientes_af',  'CLIENTES AFETADOS',u(item.Clientes));
+
+  // Duração / Prazo
+  if (cfg('cfg_duracao')) {
+    function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s; }
+    const tSemSeg = tempoSemSeg(fatReal);
+
+    // Duração ATUAL = valor do JSON + tempo decorrido desde a carga
+    const segBase = parseDuracaoSeg(item.Duracao);
+    const decorridosAgora = _cargaTimestamp ? Math.floor((Date.now() - _cargaTimestamp) / 1000) : 0;
+    let duracaoAtual = item.Duracao || '-';
+    if (segBase !== null) {
+      const segAtual = segBase + decorridosAgora;
+      const dh = Math.floor(segAtual / 3600);
+      const dm = Math.floor((segAtual % 3600) / 60);
+      const ds = segAtual % 60;
+      duracaoAtual = `${String(dh).padStart(2,'0')}:${String(dm).padStart(2,'0')}:${String(ds).padStart(2,'0')}`;
+    }
+
+    // Farol por critério de horas decorridas
+    const segAtualFarol = segBase !== null ? (segBase + decorridosAgora) : null;
+    const hDecorridas   = segAtualFarol !== null ? segAtualFarol / 3600 : null;
+    function farol(h) {
+      if (h === null)  return '';
+      if (h > 24)      return ' 🔴';
+      if (h > 20)      return ' ⚠️';
+      if (h > 12)      return ' 🟡';
+      return ' 🟢';
+    }
+    const icFarol = farol(hDecorridas);
+
+    if (flagPrioridade) {
+      if (semReal==='vermelho')              add('duracao','DURAÇÃO', cap(`${duracaoAtual} (fora do prazo — ${tSemSeg})${icFarol}`), true);
+      else if (semReal==='amarelo'&&tSemSeg) add('duracao','DURAÇÃO', cap(`${duracaoAtual} (faltam ${tSemSeg} para vencer)${icFarol}`), true);
+      else                                   add('duracao','DURAÇÃO', `${duracaoAtual}${icFarol}`, true);
+    } else {
+      let str = duracaoAtual;
+      if (semReal==='amarelo'&&tSemSeg) str+=` (faltam ${tSemSeg} para vencer)`;
+      if (semReal==='vermelho')         str+=` (fora do prazo — ${tSemSeg})`;
+      str += icFarol;
+      add('duracao','DURAÇÃO', str, true);
+    }
+  }
+
+  if (cfg('cfg_avisos') && item.Total_Avisos)
+    add('avisos','TOTAL AVISOS', u(item.Total_Avisos));
+  if (cfg('cfg_rede'))        add('rede',         'TIPO DE REDE',     u(item.Tipo_de_Rede));
+  if (cfg('cfg_nivel'))       add('nivel',        'NÍVEL TENSÃO',     u(item.Nivel_Tensao));
+  if (cfg('cfg_referencia'))  add('referencia',   'REFERÊNCIA',       u(item.Ponto_de_Referencia));
+
+  // OBS. CLIENTE fica em DADOS SERVIÇO, logo abaixo da REFERÊNCIA
+  const obsCliente = (item.Observacao_Cliente||'').trim();
+  if (cfg('cfg_comentario') && obsCliente) add('obs_cliente', 'OBS. CLIENTE', obsCliente.toUpperCase());
+
+  // ══ BLOCO 2: DADOS GPS ══
+  if ((cfg('cfg_coord_disp') && lD) || (cfg('cfg_coord_cli') && lC)) {
+    linhas.push({ chave:'__b2__', tipo:'bloco', valor:'DADOS GPS' });
+    if (cfg('cfg_coord_disp') && lD) add('coord_disp','📍 GPS DISPOSITIVO', lD, true);
+    if (cfg('cfg_coord_cli')  && lC) add('coord_cli', '👤 GPS CLIENTE',     lC, true);
+  }
+
+  // ══ BLOCO 3: DETALHES ══ (sempre na prévia, cópia depende de flagDetalhes)
+  linhas.push({ chave:'__b3__', tipo:'bloco', valor:'DETALHES', soPrevia: false });
+
+  if (cfg('cfg_num_cliente')) add('num_cliente',  'Nº CLIENTE',       u(item.Num_Cliente));
+  if (cfg('cfg_area'))        add('area',         'ÁREA DE DESPACHO', u(item.Area_Despacho));
+  if (cfg('cfg_estado'))      add('estado',       'ESTADO',           u(item.Estado));
+  if (cfg('cfg_viatura'))     add('viatura',      'VIATURA',          u(item.Viatura));
+
+  const obs = (item.Comentario||'').trim();
+  if (cfg('cfg_comentario') && obs) add('comentario', 'COMENTÁRIOS/OBS', obs.toUpperCase());
+
+  return linhas;
+}
+
+// ══════════════════════════════════════════════
+//  LINHAS → TEXTO (aplica edicaoManual)
+//  excluirDetalhes: se true, omite bloco __b3__ e seus filhos da saída
+// ══════════════════════════════════════════════
+function linhasParaTexto(linhas, excluirDetalhes) {
+  const partes = [];
+  let dentroDetalhes = false;
+
+  linhas.forEach((l, i) => {
+    // Detectar entrada/saída do bloco DETALHES
+    if (l.chave === '__b3__') dentroDetalhes = true;
+    // Se excluindo detalhes, pular tudo a partir do __b3__
+    if (excluirDetalhes && dentroDetalhes) return;
+
+    const anterior = i > 0 ? linhas[i-1] : null;
+
+    if (l.tipo === 'alerta-bloco') {
+      // Linha de título da prioridade — negrito completo, linha em branco antes
+      if (partes.length) partes.push('');
+      partes.push(`*${l.valor}*`);
+    } else if (l.tipo === 'alerta') {
+      // Alertas consecutivos sem linha em branco entre eles
+      if (partes.length && anterior?.tipo !== 'alerta' && anterior?.tipo !== 'alerta-bloco') partes.push('');
+      partes.push(l.valor ? `*${l.titulo}:* ${l.valor}` : `*${l.titulo}*`);
+    } else if (l.tipo === 'bloco') {
+      if (partes.length) partes.push('');
+      partes.push(`---- *${l.valor}* ----`);
+    } else {
+      const val = edicaoManual[l.chave] !== undefined ? edicaoManual[l.chave] : l.valor;
+      const isCoord = ['coord_disp','coord_cli'].includes(l.chave);
+      const valFinal = isCoord ? val.toLowerCase() : val;
+      const multiline = l.chave === 'comentario' || l.chave === 'obs_cliente';
+      partes.push(multiline ? `*${l.titulo}:*\n${valFinal}` : `*${l.titulo}:* ${valFinal}`);
+      if (l.chave === 'coord_disp') partes.push('');
+    }
+  });
+
+  return partes.join('\n').trim();
+}
+
+// ══════════════════════════════════════════════
+//  RENDERIZAR PRÉVIA (modo leitura)
+// ══════════════════════════════════════════════
+function renderizarPrevia() {
+  const txt  = document.getElementById('previewTxt');
+  const vaz  = document.getElementById('previewVazio');
+  const est  = document.getElementById('editorStruct');
+
+  if (!incidenciaSelecionada) {
+    txt.style.display='none'; est.classList.remove('ativo'); vaz.style.display='flex'; return;
+  }
+  const msg = linhasParaTexto(montarLinhas(), !flagDetalhes);
+  vaz.style.display='none'; est.classList.remove('ativo');
+  txt.textContent = msg;
+  txt.style.display = 'block';
+}
+
+// ══════════════════════════════════════════════
+//  MODO EDIÇÃO
+// ══════════════════════════════════════════════
+function toggleEditar() {
+  if (!incidenciaSelecionada) return;
+  modoEdicao = !modoEdicao;
+  const btn = document.getElementById('btnEditarPrevia');
+  if (modoEdicao) {
+    btn.textContent='✔ CONCLUIR'; btn.classList.add('editando');
+    construirEditorStruct();
+  } else {
+    sairModoEdicao(true);
+  }
+}
+
+function sairModoEdicao(renderizar=true) {
+  modoEdicao=false;
+  const btn=document.getElementById('btnEditarPrevia');
+  if (btn){ btn.textContent='✏️ EDITAR'; btn.classList.remove('editando'); }
+  if (renderizar) renderizarPrevia();
+}
+
+function salvarEdicaoAtual() {
+  document.querySelectorAll('.editor-valor[data-chave]').forEach(el => {
+    edicaoManual[el.getAttribute('data-chave')] = el.value.toUpperCase();
+  });
+}
+
+function construirEditorStruct() {
+  const est  = document.getElementById('editorStruct');
+  const txt  = document.getElementById('previewTxt');
+  const vaz  = document.getElementById('previewVazio');
+  vaz.style.display='none'; txt.style.display='none';
+  est.innerHTML=''; est.classList.add('ativo');
+
+  const linhas = montarLinhas();
+  linhas.forEach((l, i) => {
+    if (l.tipo==='bloco' || l.tipo==='alerta') {
+      const row=document.createElement('div');
+      row.className='editor-row';
+      const label = l.tipo==='alerta'
+        ? (l.valor ? `▸ ${l.titulo}: ${l.valor}` : `▸ ${l.titulo}`)
+        : `▸ ${l.valor}`;
+      row.innerHTML=`<div class="editor-titulo bloco">${label}</div>`;
+      est.appendChild(row);
+    } else {
+      // Separador antes de grupos-chave
+      const gruposChave=['incidencia','cliente','tipo','endereco','coord_disp','clientes_af','comentario'];
+      if (i>0 && linhas[i-1].tipo!=='bloco' && linhas[i-1].tipo!=='alerta' && gruposChave.includes(l.chave)) {
+        const sep=document.createElement('hr'); sep.className='editor-separador'; est.appendChild(sep);
+      }
+
+      const row = document.createElement('div');
+      row.className = 'editor-row';
+      const valAtual = edicaoManual[l.chave]!==undefined ? edicaoManual[l.chave] : l.valor;
+
+      // Todos os campos usam textarea para suportar quebra de linha e auto-expand
+      const ta = document.createElement('textarea');
+      ta.className = 'editor-valor';
+      ta.setAttribute('data-chave', l.chave);
+      ta.value = valAtual;
+      ta.rows = 1;
+
+      const titulo = document.createElement('div');
+      titulo.className = 'editor-titulo';
+      titulo.textContent = `*${l.titulo}:*`;
+
+      row.appendChild(titulo);
+      row.appendChild(ta);
+      est.appendChild(row);
+
+      // Auto-expand imediato e ao digitar
+      function autoExpand() {
+        ta.style.height = 'auto';
+        ta.style.height = Math.max(28, ta.scrollHeight) + 'px';
+      }
+      autoExpand();
+      ta.addEventListener('input', autoExpand);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  COPIAR PRÉVIA
+// ══════════════════════════════════════════════
+function copiarPrevia() {
+  if (!incidenciaSelecionada) return;
+  if (modoEdicao) salvarEdicaoAtual();
+  const msg = linhasParaTexto(montarLinhas(), !flagDetalhes);
+  copiarTexto(msg);
+  const btn=document.getElementById('btnCopiarPrevia');
+  btn.textContent='✅ COPIADO!'; btn.classList.add('copiado');
+  setTimeout(()=>{ btn.textContent='📋 COPIAR MENSAGEM'; btn.classList.remove('copiado'); },2500);
+}
+
+// ══════════════════════════════════════════════
+//  CAPTURAR CARD (sem barra de ações)
+// ══════════════════════════════════════════════
+async function capturarDetalhe() {
+  const card = document.getElementById('cardDetalhe');
+  if (!card) return;
+  const btn = document.querySelector('.btn-captura');
+  btn.innerHTML = '⏳'; btn.style.pointerEvents = 'none';
+  try {
+    const canvas = await html2canvas(card, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
+
+    // Tenta copiar direto para área de transferência (igual PrtSc)
+    if (navigator.clipboard && window.ClipboardItem) {
+      canvas.toBlob(async (blob) => {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          btn.innerHTML = '✅ COPIADO!';
+        } catch(e) {
+          // Fallback: baixa o arquivo se clipboard não permitir
+          _baixarCanvas(canvas);
+          btn.innerHTML = '✅ SALVO';
+        }
+        setTimeout(() => { btn.innerHTML = '📷 CAPTURAR'; btn.style.pointerEvents = ''; }, 2500);
+      }, 'image/png');
+    } else {
+      // Navegador sem suporte → baixa normalmente
+      _baixarCanvas(canvas);
+      btn.innerHTML = '✅ SALVO';
+      setTimeout(() => { btn.innerHTML = '📷 CAPTURAR'; btn.style.pointerEvents = ''; }, 2500);
+    }
+  } catch(e) {
+    btn.innerHTML = '❌'; setTimeout(() => { btn.innerHTML = '📷 CAPTURAR'; btn.style.pointerEvents = ''; }, 2000);
+  }
+}
+function _baixarCanvas(canvas) {
+  const link = document.createElement('a');
+  link.download = `INC_${incidenciaSelecionada?(incidenciaSelecionada.Num_Incidencia||'DETALHE'):'DETALHE'}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// ══════════════════════════════════════════════
+//  COPIAR / TOAST
+// ══════════════════════════════════════════════
+function copiarTexto(texto) {
+  if (navigator.clipboard) navigator.clipboard.writeText(texto).catch(()=>fallbackCopy(texto));
+  else fallbackCopy(texto);
+  mostrarToast();
+}
+function fallbackCopy(texto) {
+  const ta=document.createElement('textarea'); ta.value=texto;
+  ta.style.cssText='position:fixed;top:-9999px;left:-9999px';
+  document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+}
+function mostrarToast() {
+  const t=document.getElementById('toast');
+  t.classList.add('visivel'); setTimeout(()=>t.classList.remove('visivel'),2800);
+}
+</script>
+</body>
+</html>
