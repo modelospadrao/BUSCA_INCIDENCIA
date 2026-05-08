@@ -48,7 +48,7 @@ body{font-family:'Barlow Condensed',sans-serif;background:var(--bg);color:var(--
 .tw{flex:1;overflow:auto;position:relative;}
 .tw table{position:relative;}
 tbody tr:first-child td{border-top:none;}
-table{width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;}
+table{width:max-content;min-width:auto;border-collapse:separate;border-spacing:0;table-layout:fixed;}
 thead{position:sticky;top:0;z-index:10;}
 /* Redimensionar coluna */
 tbody tr{cursor:pointer;height:38px;user-select:none;}
@@ -323,7 +323,8 @@ td.cell-vazia:hover::after{content:'';display:block;}
   <button class="bhi" id="btnVenc" onclick="filtrarVencidas()" disabled><img src="ic_vencidas.png"><span>VENCIDAS</span></button>
   <button class="bhi" onclick="limparRota()"><img src="ic_limpar_rota.png"><span>LIMPAR ROTA</span></button>
   <button class="bhi" id="btnLimpar" onclick="lTodos()" disabled><img src="ic_limpar.png"><span>LIMPAR</span></button>
-  <button class="bhi" onclick="abrirCfg()"><img src="ic_colunas.png"><span>COLUNAS</span></button>
+  <button class="bhi" id="btnPriv" onclick="toggleColsPrivadas()" title="Ocultar/Mostrar dados privados"><img src="eye.png" style="width:20px;height:20px;object-fit:contain;"><span>OCULTAR DADOS</span></button>
+  <button class="bhi" onclick="abrirCfg()"><img src="ic_colunas.png"><span>Config. Colunas</span></button>
   <button class="bhi" onclick="irIdx()"><img src="ic_buscador.png"><span>BUSCADOR</span></button>
 </div>
 
@@ -993,6 +994,25 @@ function showAviso(msg, ico){
   document.getElementById('avisoMsg').textContent = msg;
   document.getElementById('avisoIco').textContent = ico || '⚠️';
   document.getElementById('avisoO').classList.add('ab');
+}
+
+
+// ── OCULTAR/MOSTRAR COLUNAS PRIVADAS ──
+const COLS_PRIVADAS = ['nom','tel','tel2','cli','med'];
+let _privadasOcultas = false;
+
+function toggleColsPrivadas(){
+  _privadasOcultas = !_privadasOcultas;
+  cols.forEach(c=>{
+    if(COLS_PRIVADAS.includes(c.id)) c.v = !_privadasOcultas;
+  });
+  const btn = document.getElementById('btnPriv');
+  if(btn){
+    btn.querySelector('span').textContent = _privadasOcultas ? 'MOSTRAR DADOS' : 'OCULTAR DADOS';
+    btn.style.background = _privadasOcultas ? '#fff3e0' : '';
+    btn.style.color = _privadasOcultas ? '#e65100' : '';
+  }
+  saveCols(); rH(); rT();
 }
 
 // ── HEADER TABELA ──
